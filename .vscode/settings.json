@@ -1,0 +1,9 @@
+{
+    "python.formatting.provider": "black",
+    "python.linting.pylintArgs": [
+        "--load-plugins",
+        "pylint_django"
+    ],
+    "python.linting.pylintUseMinimalCheckers": false,
+    "editor.formatOnSave": true
+}
