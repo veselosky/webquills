@@ -25,11 +25,12 @@ env = environ.Env()
 # templates from 3rd parties, list our apps first, stock stuff last.
 INSTALLED_APPS = [
     # Our apps
-    "webquills.home",
+    "webquills.core",
     "webquills.search",
     # Wagtail extras
     "wagtail.contrib.modeladmin",
     "wagtail.contrib.settings",
+    "wagtailfontawesome",
     # Stock wagtail
     "wagtail.contrib.forms",
     "wagtail.contrib.redirects",
