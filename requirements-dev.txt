@@ -2,6 +2,7 @@
 black
 django-debug-toolbar
 django-extensions
+mkdocs
 pycodestyle
 pylint
 pylint-django
