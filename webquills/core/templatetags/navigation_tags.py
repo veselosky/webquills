@@ -37,7 +37,7 @@ def is_active(page, current_page):
 # Retrieves the top menu items - the immediate children of the parent page
 # The has_menu_children method is necessary because the Foundation menu requires
 # a dropdown class to be applied to a parent
-@register.inclusion_tag("core/tags/top_menu.html", takes_context=True)
+@register.inclusion_tag("webquills/tags/top_menu.html", takes_context=True)
 def top_menu(context, parent, calling_page=None):
     menuitems = parent.get_children().live().in_menu()
     for menuitem in menuitems:
@@ -59,7 +59,7 @@ def top_menu(context, parent, calling_page=None):
 
 
 # Retrieves the children of the top menu items for the drop downs
-@register.inclusion_tag("core/tags/top_menu_children.html", takes_context=True)
+@register.inclusion_tag("webquills/tags/top_menu_children.html", takes_context=True)
 def top_menu_children(context, parent, calling_page=None):
     menuitems_children = parent.get_children()
     menuitems_children = menuitems_children.live().in_menu()
@@ -82,7 +82,7 @@ def top_menu_children(context, parent, calling_page=None):
     }
 
 
-@register.inclusion_tag("core/tags/breadcrumbs.html", takes_context=True)
+@register.inclusion_tag("webquills/tags/breadcrumbs.html", takes_context=True)
 def breadcrumbs(context):
     self = context.get("self")
     if self is None or self.depth <= 2:
@@ -93,7 +93,7 @@ def breadcrumbs(context):
     return {"ancestors": ancestors, "request": context["request"]}
 
 
-@register.inclusion_tag("core/tags/footer_text.html", takes_context=True)
+@register.inclusion_tag("webquills/tags/footer_text.html", takes_context=True)
 def get_footer_text(context):
     footer_text = ""
     if FooterText.objects.first() is not None:

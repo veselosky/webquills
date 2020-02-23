@@ -28,7 +28,7 @@ class ImageBlock(StructBlock):
 
     class Meta:
         icon = "image"
-        template = "core/blocks/image_block.html"
+        template = "webquills/blocks/image_block.html"
 
 
 # Bakerydemo allowed a blank value for size. What's the point of that?
@@ -47,7 +47,7 @@ class HeadingBlock(StructBlock):
 
     class Meta:
         icon = "title"
-        template = "core/blocks/heading_block.html"
+        template = "webquills/blocks/heading_block.html"
 
 
 class BlockQuote(StructBlock):
@@ -60,7 +60,7 @@ class BlockQuote(StructBlock):
 
     class Meta:
         icon = "fa-quote-left"
-        template = "core/blocks/blockquote.html"
+        template = "webquills/blocks/blockquote.html"
 
 
 # StreamBlocks
@@ -76,5 +76,5 @@ class BaseStreamBlock(StreamBlock):
     embed_block = EmbedBlock(
         help_text="Insert an embed URL e.g https://www.youtube.com/embed/SGJFWirQ3ks",
         icon="fa-s15",
-        template="core/blocks/embed_block.html",
+        template="webquills/blocks/embed_block.html",
     )

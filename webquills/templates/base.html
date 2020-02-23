@@ -46,14 +46,14 @@
 
 {% block header %}
     {# Header contains the main_navigation block #}
-    {% include "core/includes/header.html" with parent=site_root calling_page=self %}
+    {% include "webquills/includes/header.html" with parent=site_root calling_page=self %}
 {% endblock header %}
 
 {% block head-extra %}
 {% endblock head-extra %}
 
 {% block messages %}
-    {% include "core/includes/messages.html" %}
+    {% include "webquills/includes/messages.html" %}
 {% endblock messages %}
 
 {% block breadcrumbs %}
@@ -68,7 +68,7 @@
 
 <hr>
 <footer>
-    {% include "core/includes/footer.html" %}
+    {% include "webquills/includes/footer.html" %}
 </footer>
 
 {% block bootstrapjs %}
