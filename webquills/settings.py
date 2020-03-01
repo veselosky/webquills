@@ -12,8 +12,9 @@ PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(PROJECT_DIR)
 
 # Read environment-specific settings from environment variables
-environ.Env.read_env(os.path.join(BASE_DIR, ".env"))  # Use a .env file if present
 env = environ.Env()
+if not env("IGNORE_ENV_FILE", default=False):
+    environ.Env.read_env(os.path.join(BASE_DIR, ".env"))  # Use a .env file if present
 
 
 #######################################################################
@@ -26,6 +27,7 @@ env = environ.Env()
 INSTALLED_APPS = [
     # Our apps
     "webquills.core",
+    "webquills.isolation",
     "webquills.search",
     # Wagtail extras
     "wagtail.contrib.modeladmin",
@@ -141,7 +143,12 @@ DEBUG = env("DEBUG", default=False)
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env("SECRET_KEY")
 
-DATABASES = {"default": env.db(default=f"sqlite:///{BASE_DIR}/db.sqlite3")}
+# Force tests to use sqlite in-memory, regardless of environment
+db_settings = env.db(default=f"sqlite:///{BASE_DIR}/db.sqlite3")
+test_db_settings = {"ENGINE": "django.db.backends.sqlite", "NAME": ":memory:"}
+db_settings.setdefault("TEST", test_db_settings)
+DATABASES = {"default": db_settings}
+
 CACHES = {"default": env.cache(default="locmemcache://")}
 # Email settings don't use a dict. Add to local vars instead.
 # https://django-environ.readthedocs.io/en/latest/#email-settings
