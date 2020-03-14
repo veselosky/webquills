@@ -1,6 +1,7 @@
 """
 These hooks change the default visiblity of objects so that one tenant (represented by
-a Group) cannot see objects belonging to another tenant.
+a Group) cannot see objects belonging to another tenant. Users cannot see any objects
+unless their group has been given explicit permission.
 """
 from functools import reduce
 
@@ -12,6 +13,8 @@ from wagtail.core.models import (
 )
 
 
+# As of 2.8, Wagtail does not have a construct_collection_chooser_queryset hook
+# that we can hook this to. We have to hack it in by overriding a template.
 def get_user_collections(user):
     """
     Returns a queryset of collections for which the user has any explicit group
@@ -39,13 +42,17 @@ def get_user_collections(user):
     # The common case, user has only one root
     if len(descendant_querysets) == 1:
         # Querysets override bitwise &; collection must pass both filters
+        # https://docs.djangoproject.com/en/3.0/ref/models/querysets/#and
         return collections & descendant_querysets[0]
     # The more complex case, user has multiple roots
+    # https://docs.djangoproject.com/en/3.0/ref/models/querysets/#or
     allowedqs = reduce(lambda x, y: x | y, descendant_querysets)
     return collections & allowedqs
 
 
 def filter_documents_in_permitted_collections(documents, request):
+    """Filter a document queryset to documents belonging to collections where the
+    user has some explicit permission."""
     if request.user.is_superuser:
         return documents
     collections = get_user_collections(request.user)
@@ -53,6 +60,8 @@ def filter_documents_in_permitted_collections(documents, request):
 
 
 def filter_images_in_permitted_collections(images, request):
+    """Filter an image queryset to images belonging to collections where the
+    user has some explicit permission."""
     if request.user.is_superuser:
         return images
     collections = get_user_collections(request.user)
@@ -60,15 +69,27 @@ def filter_images_in_permitted_collections(images, request):
 
 
 def filter_pages_by_group_permission(pages, request):
+    """Filter a pages queryset to trees where the user has some explicit permission."""
     if request.user.is_superuser:
         return pages
+
     groups = request.user.groups.all()
+    if not groups:
+        # FIXME Will this cause crashes?
+        return None
+
     permits = GroupPagePermission.objects.filter(group__in=groups)
+    if not permits:
+        # FIXME Will this cause crashes?
+        return None
+
     querysets = [p.page.get_descendants(inclusive=True) for p in permits]
     # The common case, user has only one root
     if len(querysets) == 1:
+        # https://docs.djangoproject.com/en/3.0/ref/models/querysets/#and
         return pages & querysets[0]
     # The more complex case, user has multiple roots
+    # https://docs.djangoproject.com/en/3.0/ref/models/querysets/#or
     allowedqs = allowedqs = reduce(lambda x, y: x | y, querysets)
     return pages & allowedqs
 
