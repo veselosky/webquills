@@ -67,7 +67,8 @@ provides the filtered queryset, as suggested in [this Github comment][5].
 
 - Although Collections are implemented as a Tree, they are presented in the
   Wagtail Admin as a flat list. There is currently no way to select a parent
-  when creating a Collection. This makes management tricky. See [issue 3380][6].
+  when creating a Collection. This makes management tricky. This issue should
+  be resolved in Wagtail 2.11. See [issue 3380][6].
 - With this scheme, Collections are scoped to the tenant, and not to a specific
   site. To isolate at the site level, you would need to adopt a strict one site
   per tenant policy.
@@ -75,13 +76,9 @@ provides the filtered queryset, as suggested in [this Github comment][5].
   remain "global" for now. A user with Admin-level access is NOT scoped to a
   tenant.
 
-[1]:
-  https://docs.wagtail.io/en/v2.8/reference/hooks.html#construct-page-chooser-queryset
-[2]:
-  https://docs.wagtail.io/en/v2.8/reference/hooks.html#construct-document-chooser-queryset
-[3]:
-  https://docs.wagtail.io/en/v2.8/reference/hooks.html#construct-image-chooser-queryset
-[4]:
-  https://docs.wagtail.io/en/v2.8/reference/hooks.html#construct-explorer-page-queryset
+[1]: https://docs.wagtail.io/en/v2.8/reference/hooks.html#construct-page-chooser-queryset
+[2]: https://docs.wagtail.io/en/v2.8/reference/hooks.html#construct-document-chooser-queryset
+[3]: https://docs.wagtail.io/en/v2.8/reference/hooks.html#construct-image-chooser-queryset
+[4]: https://docs.wagtail.io/en/v2.8/reference/hooks.html#construct-explorer-page-queryset
 [5]: https://github.com/wagtail/wagtail/issues/4488#issuecomment-494128414
 [6]: https://github.com/wagtail/wagtail/issues/3380
