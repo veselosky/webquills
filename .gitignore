@@ -130,3 +130,6 @@ dmypy.json
 
 *.code-workspace
 media
+
+# Visual Studio Code settings
+.vscode/
