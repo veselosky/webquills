@@ -1,0 +1,6 @@
+django-bootstrap4
+django-environ
+django-redis
+pillow
+wagtail >=2.12, < 2.13
+wagtailfontawesome
