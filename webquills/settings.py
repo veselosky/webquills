@@ -65,7 +65,7 @@ WAGTAIL_SITE_NAME = env("WAGTAIL_SITE_NAME", default="WebQuills")
 
 # Base URL to use when referring to full URLs within the Wagtail admin backend -
 # e.g. in notification emails. Don't include '/admin' or a trailing slash
-BASE_URL = env("WAGTAIL_BASE_URL", default="http://example.com")
+BASE_URL = env("WAGTAIL_BASE_URL", default="http://localhost.webquills.com")
 WAGTAILIMAGES_IMAGE_MODEL = "webquills.AttributableImage"
 
 
@@ -80,8 +80,11 @@ WSGI_APPLICATION = "webquills.wsgi.application"
 # templates from 3rd parties, list our apps first, stock stuff last.
 INSTALLED_APPS = [
     # Our apps
+    "webquills.theme_bs4_2021",
     "webquills.core",
     "webquills.search",
+    # third party apps
+    "bootstrap4",
     # Wagtail extras
     "wagtail.contrib.modeladmin",
     "wagtail.contrib.settings",
@@ -163,6 +166,7 @@ if DEBUG:
 
         INSTALLED_APPS.append("debug_toolbar")
         MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
+        INTERNAL_IPS = ['127.0.0.1', ]
     except ImportError:
         # Dev tools are optional
         pass
