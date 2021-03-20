@@ -1,0 +1,29 @@
+<!DOCTYPE html>{% load bootstrap4 %}
+<html class="no-js" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{% block title %}{% endblock %}</title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {# Global stylesheets #}{% bootstrap_css %}
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{% static 'css/worktracker.css' %}"
+    />
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body class="{% block body_class %}{% endblock %}">
+    {% block header %}{% endblock header %}
+    {% block precontent %}{% endblock precontent %}
+    {% block content %}{% endblock %}
+    {% block postcontent %}{% endblock postcontent %}
+    {% block footer %}{% endblock footer %}
+    {# Global javascript #}{% bootstrap_javascript %}
+    <script
+      type="text/javascript"
+      src="{% static 'js/worktracker.js' %}"
+    ></script>
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>
