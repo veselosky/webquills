@@ -1,12 +1,9 @@
 
 {% extends 'base.html' %}{% load static bootstrap4 %}
-{% block extra_css %}
-{% endblock extra_css %}
 {% block header %}{# Nav menus, top utils, and content showcase #}
 <div class="container">
 {% include "components/masthead.html" %}
 {% include "components/navmenu_top.html" %}
-{% include "components/cta_block.html" %}
 {% include "components/featured_block.html" %}
 </div>
 {% endblock header %}

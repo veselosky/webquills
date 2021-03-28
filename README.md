@@ -17,7 +17,8 @@ This is the code that runs (or one day will run) webquills.com.
 [ ] *Nav menu* component implementation
 [ ] *Article list* component implementation
 [ ] OpenGraph metadata component
-[ ] Set default RichText features to: bold, italic, link, document-link, ol, ul, code, superscript, subscript, strikethrough
+[x] Set default RichText features to: bold, italic, link, document-link, ol, ul, code,
+    superscript, subscript, strikethrough
 [x] HeadingBlock (with auto-anchor)
 [ ] ImageBlock (with auto-attribution)
 [x] EmbedBlock (for oEmbeds)

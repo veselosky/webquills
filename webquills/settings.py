@@ -70,6 +70,27 @@ WAGTAILIMAGES_IMAGE_MODEL = "webquills.AttributableImage"
 WAGTAIL_ENABLE_UPDATE_CHECK = False
 TAGGIT_CASE_INSENSITIVE = True
 TAG_SPACES_ALLOWED = False
+# Set of features to make available in the draftail editor. We exclude
+# headings, images, blockquotes, and embeds because we provide blocks for these.
+WAGTAILADMIN_RICH_TEXT_EDITORS = {
+    "default": {
+        "WIDGET": "wagtail.admin.rich_text.DraftailRichTextArea",
+        "OPTIONS": {
+            "features": [
+                "bold",
+                "italic",
+                "link",
+                "document-link",
+                "ol",
+                "ul",
+                "code",
+                "superscript",
+                "subscript",
+                "strikethrough",
+            ]
+        },
+    },
+}
 
 #######################################################################
 # Application Composition: Fixed values regardless of environment.
