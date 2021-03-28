@@ -31,15 +31,12 @@ class ImageBlock(StructBlock):
         template = "webquills/blocks/image_block.html"
 
 
-# Bakerydemo allowed a blank value for size. What's the point of that?
 class HeadingBlock(StructBlock):
-    """
-    Custom `StructBlock` that allows the user to select h2 - h4 sizes for headers
-    """
+    "A link-targetable subhead."
 
     heading_text = CharBlock(classname="title", required=True)
     size = ChoiceBlock(
-        choices=[("h2", "H2"), ("h3", "H3"), ("h4", "H4")],
+        choices=[("h2", "H2"), ("h3", "H3"), ("h4", "H4"), ("h5", "H5"), ("h6", "H6")],
         blank=False,
         required=True,
         default="h2",

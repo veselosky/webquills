@@ -13,4 +13,5 @@ def test_heading_block():
             }
         )
     )
-    assert """<h2 id="my-heading">My Heading""" in html
+    assert '<h2 id="my-heading">My Heading' in html
+    assert '<a href="#my-heading"' in html

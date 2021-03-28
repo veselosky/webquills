@@ -1,4 +1,5 @@
 {% load i18n %}{% with slug=self.heading_text|slugify %}
 <{{self.size}} id="{{slug}}">{{ self.heading_text }}
-<i class="bi-link-45deg" role="img" aria-label="{% trans "Link here" %}" title="{% trans "Link here" %}"></i></{{self.size}}>
+<a href="#{{slug}}"><i class="bi-link-45deg" role="img" aria-label="{% trans "Link here" %}"
+title="{% trans "Link here" %}"></i></a></{{self.size}}>
 {% endwith %}
