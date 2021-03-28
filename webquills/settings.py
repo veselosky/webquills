@@ -67,7 +67,9 @@ WAGTAIL_SITE_NAME = env("WAGTAIL_SITE_NAME", default="WebQuills")
 # e.g. in notification emails. Don't include '/admin' or a trailing slash
 BASE_URL = env("WAGTAIL_BASE_URL", default="http://localhost.webquills.com")
 WAGTAILIMAGES_IMAGE_MODEL = "webquills.AttributableImage"
-
+WAGTAIL_ENABLE_UPDATE_CHECK = False
+TAGGIT_CASE_INSENSITIVE = True
+TAG_SPACES_ALLOWED = False
 
 #######################################################################
 # Application Composition: Fixed values regardless of environment.
@@ -166,7 +168,9 @@ if DEBUG:
 
         INSTALLED_APPS.append("debug_toolbar")
         MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
-        INTERNAL_IPS = ['127.0.0.1', ]
+        INTERNAL_IPS = [
+            "127.0.0.1",
+        ]
     except ImportError:
         # Dev tools are optional
         pass
