@@ -14,17 +14,11 @@ from wagtail.core.blocks import (
 )
 
 
-# TODO Attribution is not context-specific, it should be added to the custom
-# image model
 class ImageBlock(StructBlock):
-    """
-    Custom `StructBlock` for utilizing images with associated caption and
-    attribution data
-    """
+    """Image with associated caption"""
 
     image = ImageChooserBlock(required=True)
     caption = CharBlock(required=False)
-    attribution = CharBlock(required=False)
 
     class Meta:
         icon = "image"
@@ -48,12 +42,10 @@ class HeadingBlock(StructBlock):
 
 
 class BlockQuote(StructBlock):
-    """
-    Custom `StructBlock` that allows the user to attribute a quote to the author
-    """
+    """Blockquote with citation"""
 
     text = TextBlock()
-    attribution = CharBlock(blank=True, required=False, label="e.g. Mary Berry")
+    citation = CharBlock(blank=True, required=False, label="e.g. Mary Berry")
 
     class Meta:
         icon = "fa-quote-left"
@@ -67,7 +59,7 @@ class BaseStreamBlock(StreamBlock):
     """
 
     heading_block = HeadingBlock()
-    paragraph_block = RichTextBlock()
+    text_block = RichTextBlock()
     image_block = ImageBlock()
     block_quote = BlockQuote()
     embed_block = EmbedBlock(

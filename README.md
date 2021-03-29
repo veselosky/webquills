@@ -4,6 +4,8 @@ This is the code that runs (or one day will run) webquills.com.
 
 ## Design and things to do
 
+[ ] Add django-distill for static site generation
+
 ### Base template and reusable components
 
 [x] Break out *Masthead* include (example only)
@@ -35,7 +37,6 @@ This is the code that runs (or one day will run) webquills.com.
 [x] Add intro (StreamField) to Category model
 [x] Add featured image to Category model
 [ ] Add featured articles (M2M) to Category model
-
 
 ### Article Page
 

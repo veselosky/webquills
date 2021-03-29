@@ -66,7 +66,6 @@ WAGTAIL_SITE_NAME = env("WAGTAIL_SITE_NAME", default="WebQuills")
 # Base URL to use when referring to full URLs within the Wagtail admin backend -
 # e.g. in notification emails. Don't include '/admin' or a trailing slash
 BASE_URL = env("WAGTAIL_BASE_URL", default="http://localhost.webquills.com")
-WAGTAILIMAGES_IMAGE_MODEL = "webquills.AttributableImage"
 WAGTAIL_ENABLE_UPDATE_CHECK = False
 TAGGIT_CASE_INSENSITIVE = True
 TAG_SPACES_ALLOWED = False
