@@ -15,14 +15,14 @@ This is the code that runs (or one day will run) webquills.com.
 [ ] Break out *Article list* include (example only)
 [x] Default title
 [x] Default meta description
-[ ] *Masthead* component implementation
+[x] *Masthead* component implementation
 [ ] *Nav menu* component implementation
 [ ] *Article list* component implementation
 [ ] OpenGraph metadata component
 [x] Set default RichText features to: bold, italic, link, document-link, ol, ul, code,
     superscript, subscript, strikethrough
 [x] HeadingBlock (with auto-anchor)
-[ ] ImageBlock (with auto-attribution)
+[x] ImageBlock (with caption)
 [x] EmbedBlock (for oEmbeds)
 [ ] HRBlock (lol)
 [ ] BlockquoteBlock (with citation)
@@ -36,7 +36,6 @@ This is the code that runs (or one day will run) webquills.com.
 
 [x] Add intro (StreamField) to Category model
 [x] Add featured image to Category model
-[ ] Add featured articles (M2M) to Category model
 
 ### Article Page
 
