@@ -1,4 +1,4 @@
-<!DOCTYPE html>{% load bootstrap4 static %}
+<!DOCTYPE html>{% load bootstrap4 static wagtailcore_tags %}
 <html class="no-js" lang="en">
 <head>
   <meta charset="utf-8" />
@@ -19,7 +19,7 @@
   {% block footer %}
   <footer class="blog-footer">
     <p>© Copyright {{page.first_published_at.year}} {{settings.webquills.SiteMeta.copyright_holder}}.
-    {{settings.webquills.SiteMeta.copyright_license_notice}}</p>
+    {{settings.webquills.SiteMeta.copyright_license_notice|richtext}}</p>
     <p>
       <a href="#">Back to top</a>
     </p>
