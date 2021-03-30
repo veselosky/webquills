@@ -8,22 +8,10 @@ This is the code that runs (or one day will run) webquills.com.
 
 ### Base template and reusable components
 
-[x] Break out *Masthead* include (example only)
-[x] Break out *Nav menu* include (example only)
-[x] Break out *CTA Jumbotron* include (example only)
-[x] Break out *Featured posts* include (example only)
 [ ] Break out *Article list* include (example only)
-[x] Default title
-[x] Default meta description
-[x] *Masthead* component implementation
 [ ] *Nav menu* component implementation
 [ ] *Article list* component implementation
 [ ] OpenGraph metadata component
-[x] Set default RichText features to: bold, italic, link, document-link, ol, ul, code,
-    superscript, subscript, strikethrough
-[x] HeadingBlock (with auto-anchor)
-[x] ImageBlock (with caption)
-[x] EmbedBlock (for oEmbeds)
 [ ] HRBlock (lol)
 [ ] BlockquoteBlock (with citation)
 [ ] CodeBlock
@@ -41,7 +29,6 @@ This is the code that runs (or one day will run) webquills.com.
 
 [x] Add body (StreamField) to Article model
 [x] Add featured image to Article model
-[x] Add attribution to Article model
 
 Do I even want a sidebar? If yes, what should I put in it?
 About the Author

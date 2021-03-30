@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -12,6 +13,7 @@ from wagtail.admin.edit_handlers import (
     PageChooserPanel,
     StreamFieldPanel,
 )
+from wagtail.contrib.settings.models import BaseSetting, register_setting
 from wagtail.core.fields import RichTextField, StreamField
 from wagtail.core.models import Collection, Page
 from wagtail.images import get_image_model_string
@@ -22,6 +24,34 @@ from wagtail.snippets.models import register_snippet
 from webquills.core.blocks import BaseStreamBlock
 
 image_model_name = get_image_model_string()
+
+
+###############################################################################
+# Site settings
+###############################################################################
+@register_setting
+class SiteMeta(BaseSetting):
+    tagline = models.CharField(
+        _("tagline"),
+        max_length=255,
+        blank=True,
+        null=True,
+        help_text=_("Subtitle. A few words letting visitors know what to expect."),
+    )
+    copyright_holder = models.CharField(
+        _("copyright holder"),
+        max_length=255,
+        default=settings.WAGTAIL_SITE_NAME,
+        help_text=_("Owner of the copyright (in footer notice)"),
+    )
+    # TODO Add a License table and FK
+    copyright_license_notice = RichTextField(
+        _("copyright license notice"),
+        default=_("All rights reserved."),
+        help_text=_(
+            "Text to follow the copyright notice indicating any license, e.g. CC-BY"
+        ),
+    )
 
 
 ###############################################################################
