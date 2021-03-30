@@ -58,6 +58,9 @@ class BaseStreamBlock(StreamBlock):
     Define the custom blocks that `StreamField` will utilize
     """
 
+    class Meta:
+        required = False
+
     heading_block = HeadingBlock()
     text_block = RichTextBlock()
     image_block = ImageBlock()
