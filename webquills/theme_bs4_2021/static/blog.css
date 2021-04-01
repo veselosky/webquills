@@ -48,11 +48,11 @@ h1, h2, h3, h4, h5, h6 {
   -webkit-overflow-scrolling: touch;
 }
 
-.nav-scroller .nav-link {
+/* .nav-scroller .nav-link {
   padding-top: .75rem;
   padding-bottom: .75rem;
   font-size: .875rem;
-}
+} */
 
 .card-img-right {
   height: 100%;

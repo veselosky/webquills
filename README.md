@@ -9,7 +9,6 @@ This is the code that runs (or one day will run) webquills.com.
 ### Base template and reusable components
 
 [ ] Break out *Article list* include (example only)
-[ ] *Nav menu* component implementation
 [ ] *Article list* component implementation
 [ ] OpenGraph metadata component
 [ ] HRBlock (lol)
