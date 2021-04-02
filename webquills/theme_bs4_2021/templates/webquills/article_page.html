@@ -11,10 +11,12 @@
 {% block content %}
 <div class="container">
   <div class="row">
-    <main role="main" class="col-md-8 blog-main blog-post">
+    <main role="main" class="col-md-8 blog-main">
+    <article class="blog-post">
       <h1 class="blog-post-title">{{ page.title }}</h1>
-      <p class="blog-post-meta">{{ page.first_published_at }}. {{ page.specific.attribution }}</p>
-      {% include_block page.specific.body %}
+      <p class="blog-post-meta">{{ page.published|date:"DATE_FORMAT" }} {{ page.attribution }}</p>
+      {% include_block page.body %}
+    </article>
     </main><!-- /.blog-main -->
 
     <aside class="col-md-4 blog-sidebar">
@@ -54,23 +56,5 @@
   </div><!-- /.row -->
 </div><!-- /.container -->
 {% endblock content %}
-{% block footer %}{% wagtailuserbar "bottom-right" %}
-    <footer class="blog-footer">
-      <p>Blog template built for <a href="https://getbootstrap.com/">Bootstrap</a> by <a href="https://twitter.com/mdo">@mdo</a>.</p>
-      <p>
-        <a href="#">Back to top</a>
-      </p>
-    </footer>
-{% endblock footer %}
-{% block extra_js %}{# for demo only, remove in production #}
-<script src="{% static "holder.js" %}"></script>
-<script>
-  Holder.addTheme('thumb', {
-    bg: '#55595c',
-    fg: '#eceeef',
-    text: 'Thumbnail'
-  });
-</script>
-{% endblock extra_js %}
   </body>
 </html>

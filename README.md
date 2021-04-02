@@ -18,6 +18,7 @@ This is the code that runs (or one day will run) webquills.com.
 ### Home Page
 
 [ ] CTA Jumbotron block
+[ ] Ensure homepage can only be created at top level
 
 ### Category Page
 
@@ -28,6 +29,7 @@ This is the code that runs (or one day will run) webquills.com.
 
 [x] Add body (StreamField) to Article model
 [x] Add featured image to Article model
+[x] Proper publish date
 
 Do I even want a sidebar? If yes, what should I put in it?
 About the Author

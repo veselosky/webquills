@@ -119,8 +119,31 @@ class ArticlePage(Page):
         null=True,
         on_delete=models.SET_NULL,
     )
+    orig_published_at = models.DateTimeField(
+        verbose_name=_("original publish date"),
+        db_index=True,
+        blank=True,
+        null=True,
+        help_text=_(
+            "If published before being added to this site, set the original publish "
+            "date here."
+        ),
+    )
+
+    @property
+    def published(self):
+        "Datetime of original publication"
+        return self.orig_published_at or self.first_published_at
+
+    @property
+    def attribution(self):
+        "Article byline. Someday this will do something meaningful."
+        return "by Vince Veselosky"
 
     content_panels = Page.content_panels + [
         StreamFieldPanel("body"),
         FieldPanel("featured_image"),
+    ]
+    settings_panels = Page.settings_panels + [
+        FieldPanel("orig_published_at"),
     ]
