@@ -18,7 +18,7 @@
   {% block postcontent %}{% endblock postcontent %}
   {% block footer %}
   <footer class="blog-footer">
-    <p>© Copyright {{page.first_published_at.year}} {{settings.webquills.SiteMeta.copyright_holder}}.</p>
+    <p>© Copyright {{page.published.year}} {{settings.webquills.SiteMeta.copyright_holder}}.</p>
     {{settings.webquills.SiteMeta.copyright_license_notice|richtext}}
     <p>
       <a href="#">Back to top</a>
