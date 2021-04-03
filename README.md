@@ -4,32 +4,23 @@ This is the code that runs (or one day will run) webquills.com.
 
 ## Design and things to do
 
-[ ] Add django-distill for static site generation
+[ ] 404 template
+[ ] 500 template
 
 ### Base template and reusable components
 
-[ ] Break out *Article list* include (example only)
-[ ] *Article list* component implementation
 [ ] OpenGraph metadata component
 [ ] HRBlock (lol)
 [ ] BlockquoteBlock (with citation)
 [ ] CodeBlock
-
-### Home Page
-
-[ ] CTA Jumbotron block
-[ ] Ensure homepage can only be created at top level
+[ ] RSS autodiscovery link
 
 ### Category Page
 
 [x] Add intro (StreamField) to Category model
 [x] Add featured image to Category model
+[ ] RSS feed per category
 
-### Article Page
-
-[x] Add body (StreamField) to Article model
-[x] Add featured image to Article model
-[x] Proper publish date
 
 Do I even want a sidebar? If yes, what should I put in it?
 About the Author
