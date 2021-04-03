@@ -61,12 +61,13 @@ class BaseStreamBlock(StreamBlock):
     class Meta:
         required = False
 
-    heading_block = HeadingBlock()
-    text_block = RichTextBlock()
-    image_block = ImageBlock()
-    block_quote = BlockQuote()
-    embed_block = EmbedBlock(
+    heading = HeadingBlock(required=False)
+    text = RichTextBlock(required=False)
+    image = ImageBlock(required=False)
+    block_quote = BlockQuote(required=False)
+    embed = EmbedBlock(
         help_text="Insert an embed URL e.g https://www.youtube.com/embed/SGJFWirQ3ks",
         icon="fa-s15",
         template="webquills/blocks/embed_block.html",
+        required=False,
     )
