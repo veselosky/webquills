@@ -3,7 +3,9 @@ from datetime import datetime
 from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
+from modelcluster.fields import ParentalKey
+from modelcluster.contrib.taggit import ClusterTaggableManager
+from taggit.models import TaggedItemBase
 import wagtail.images.models as wagtail_images
 from wagtail.admin.edit_handlers import (
     FieldPanel,
@@ -55,6 +57,15 @@ class SiteMeta(BaseSetting):
 
 
 ###############################################################################
+# Tools & Utilities
+###############################################################################
+class ArticleTag(TaggedItemBase):
+    content_object = ParentalKey(
+        "ArticlePage", related_name="tagged_items", on_delete=models.CASCADE
+    )
+
+
+###############################################################################
 # Core Page types
 ###############################################################################
 class HomePage(Page):
@@ -79,6 +90,7 @@ class CategoryPage(Page):
 
     show_in_menus_default = True
     parent_page_types = ["webquills.HomePage"]
+    subpage_types = ["webquills.ArticlePage"]  # Allow subcategories?
 
     intro = StreamField(BaseStreamBlock(), verbose_name=_("intro"), blank=True)
     featured_image = models.ForeignKey(
@@ -105,7 +117,9 @@ class ArticlePage(Page):
     """
 
     parent_page_types = ["webquills.HomePage", "webquills.CategoryPage"]
+    subpage_types = []  # Articles do not have subpages
 
+    # Stored database fields
     body = StreamField(
         BaseStreamBlock(),
         verbose_name=_("article body"),
@@ -129,21 +143,55 @@ class ArticlePage(Page):
             "date here."
         ),
     )
+    updated_at = models.DateTimeField(
+        verbose_name=_("updated date"),
+        db_index=True,
+        blank=True,
+        null=True,
+        help_text=_("Date of the most recent significant editorial update, if any."),
+    )
+    tags = ClusterTaggableManager(through=ArticleTag, blank=True)
 
-    @property
-    def published(self):
-        "Datetime of original publication"
-        return self.orig_published_at or self.first_published_at
-
+    # Additional properties and methods
     @property
     def attribution(self):
         "Article byline. Someday this will do something meaningful."
         return "by Vince Veselosky"
 
+    @property
+    def excerpt(self):
+        "Rich text excerpt for use in teases and feed content."
+        # By convention, use the first block of the body if it is a text block.
+        if self.body and self.body[0].block_type == "text":
+            return self.body[0]
+        return self.search_description
+
+    @property
+    def published(self):
+        "Datetime of original publication"
+        if self.live:
+            return self.orig_published_at or self.first_published_at
+        return self.go_live_at
+
+    @property
+    def updated(self):
+        "Datetime of the most recent significant editorial update"
+        return self.updated_at or self.published
+
+    # Wagtail Admin Panels
     content_panels = Page.content_panels + [
         StreamFieldPanel("body"),
         FieldPanel("featured_image"),
     ]
-    settings_panels = Page.settings_panels + [
-        FieldPanel("orig_published_at"),
-    ]
+
+    settings_panels = [
+        FieldRowPanel(
+            [
+                FieldPanel("orig_published_at"),
+                FieldPanel("updated_at"),
+            ],
+            heading=_("Dates"),
+        )
+    ] + Page.settings_panels
+
+    promote_panels = [FieldPanel("tags")] + Page.promote_panels

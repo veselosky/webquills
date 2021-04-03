@@ -14,7 +14,7 @@
     <main role="main" class="col-md-8 blog-main">
     <article class="blog-post">
       <h1 class="blog-post-title">{{ page.title }}</h1>
-      <p class="blog-post-meta">{{ page.published|date:"DATE_FORMAT" }} {{ page.attribution }}</p>
+      <p class="blog-post-meta">{{ page.updated|date:"DATE_FORMAT" }} {{ page.attribution }}</p>
       {% include_block page.body %}
     </article>
     </main><!-- /.blog-main -->
