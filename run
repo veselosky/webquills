@@ -18,6 +18,11 @@ function bootstrap {
     $PYTHON $BASE_DIR/manage.py migrate
 }
 
+function evolve {
+    $PYTHON $BASE_DIR/manage.py makemigrations
+    migrate
+}
+
 function help {
     echo "$0 <task> <args>"
     echo "Tasks:"
