@@ -118,6 +118,11 @@ class CategoryPage(Page):
         context["featured_articles"] = (
             ArticlePage.objects.child_of(self).live().filter(tags__name="featured")
         )
+        context["recent_articles"] = (
+            ArticlePage.objects.child_of(self)
+            .live()
+            .order_by("-first_published_at")[:26]
+        )
         return context
 
     @property
@@ -196,7 +201,11 @@ class ArticlePage(Page):
     def excerpt(self):
         "Rich text excerpt for use in teases and feed content."
         # By convention, use the first block of the body if it is a text block.
-        if self.body and self.body[0].block_type == "text":
+        if (
+            self.body
+            and self.body[0].block_type == "tease"
+            or self.body[0].block_type == "text"
+        ):
             return self.body[0]
         return self.search_description
 

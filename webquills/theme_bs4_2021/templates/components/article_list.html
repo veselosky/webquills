@@ -1,0 +1,8 @@
+{% load i18n wagtailcore_tags %}{% for article in article_list %}
+<article class="blog-post">
+  <h2 class="blog-post-title"><a href="{% pageurl article %}">{{ article.title }}</a></h2>
+  <p class="blog-post-meta">{{ article.updated|date:"DATE_FORMAT"}} {{ article.attribution }}</p>
+  {{ article.excerpt }}
+  <p><a href="{% pageurl article %}#continue-reading">{% trans "Continue reading" %}</a></p>
+</article><!-- /.blog-post -->
+{% endfor %}
