@@ -9,8 +9,8 @@
       </div>
       {% if article.featured_image %}
       {% image article.featured_image fill-200x250 class="card-img-right flex-auto d-none d-md-block" %}
-      {% elif article.parent.specific.featured_image %}
-      {% image article.parent.specific.featured_image fill-200x250 class="card-img-right flex-auto d-none d-md-block" %}
+      {% elif article.get_parent.specific.featured_image %}
+      {% image article.get_parent.specific.featured_image fill-200x250 class="card-img-right flex-auto d-none d-md-block" %}
       {% else %}
       <img class="card-img-right flex-auto d-none d-md-block" src="https://placeimg.com/200/250/animals/sepia" alt="A cute animal">
       {% endif %}
