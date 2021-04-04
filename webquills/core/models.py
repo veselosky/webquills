@@ -73,6 +73,18 @@ class HomePage(Page):
 
     body = StreamField(BaseStreamBlock(), verbose_name="Page body", blank=True)
 
+    @property
+    def published(self):
+        "Datetime of publication for copyright purposes"
+        if self.live:
+            return self.last_published_at
+        return self.go_live_at
+
+    @property
+    def updated(self):
+        "Datetime of the most recent significant editorial update"
+        return self.published
+
     content_panels = Page.content_panels + [StreamFieldPanel("body")]
 
 
@@ -101,7 +113,29 @@ class CategoryPage(Page):
         on_delete=models.SET_NULL,
     )
 
-    content_panels = Page.content_panels + [StreamFieldPanel("intro")]
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        context["featured_articles"] = (
+            ArticlePage.objects.child_of(self).live().filter(tags__name="featured")
+        )
+        return context
+
+    @property
+    def published(self):
+        "Datetime of publication for copyright purposes"
+        if self.live:
+            return self.last_published_at
+        return self.go_live_at
+
+    @property
+    def updated(self):
+        "Datetime of the most recent significant editorial update"
+        return self.published
+
+    content_panels = Page.content_panels + [
+        FieldPanel("featured_image"),
+        StreamFieldPanel("intro"),
+    ]
 
 
 class ArticlePage(Page):
@@ -180,8 +214,8 @@ class ArticlePage(Page):
 
     # Wagtail Admin Panels
     content_panels = Page.content_panels + [
-        StreamFieldPanel("body"),
         FieldPanel("featured_image"),
+        StreamFieldPanel("body"),
     ]
 
     settings_panels = [

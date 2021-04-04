@@ -1,9 +1,13 @@
 
-{% extends 'base.html' %}{% load static bootstrap4 %}
+{% extends 'base.html' %}{% load static bootstrap4 wagtailcore_tags %}
 {% block header %}{# Nav menus, top utils, and content showcase #}
 <div class="container">
 {% include "components/masthead.html" %}
 {% include "components/navmenu_top.html" %}
+<div class="row mb-2"><div class="col">
+<h1>{{ page.title }}</h1>
+{% include_block page.intro %}
+</div></div>
 {% include "components/featured_block.html" %}
 </div>
 {% endblock header %}

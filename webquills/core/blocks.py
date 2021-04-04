@@ -1,7 +1,7 @@
 ###############################################################################
 # Copied from bakerydemo and then modified.
 ###############################################################################
-
+from django.utils.translation import gettext_lazy as _
 from wagtail.images.blocks import ImageChooserBlock
 from wagtail.embeds.blocks import EmbedBlock
 from wagtail.core.blocks import (
@@ -45,7 +45,7 @@ class BlockQuote(StructBlock):
     """Blockquote with citation"""
 
     text = TextBlock()
-    citation = CharBlock(blank=True, required=False, label="e.g. Mary Berry")
+    citation = CharBlock(blank=True, required=False, label=_("e.g. Mary Berry"))
 
     class Meta:
         icon = "fa-quote-left"
@@ -60,13 +60,21 @@ class BaseStreamBlock(StreamBlock):
 
     class Meta:
         required = False
+        block_counts = {"tease": {"max_num": 1}}
 
-    heading = HeadingBlock(required=False)
+    tease = RichTextBlock(
+        required=False,
+        template="webquills/blocks/tease_block.html",
+        help_text=_("Use tease block only ONCE, as the first block."),
+    )
     text = RichTextBlock(required=False)
     image = ImageBlock(required=False)
+    heading = HeadingBlock(required=False)
     block_quote = BlockQuote(required=False)
     embed = EmbedBlock(
-        help_text="Insert an embed URL e.g https://www.youtube.com/embed/SGJFWirQ3ks",
+        help_text=_(
+            "Insert an embed URL e.g https://www.youtube.com/embed/SGJFWirQ3ks"
+        ),
         icon="fa-s15",
         template="webquills/blocks/embed_block.html",
         required=False,
