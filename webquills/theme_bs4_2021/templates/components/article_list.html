@@ -1,3 +1,4 @@
+{% comment %}Set the `article_list` variable when including this component.{% endcomment %}
 {% load i18n wagtailcore_tags %}{% for article in article_list %}
 <article class="blog-post">
   <h2 class="blog-post-title"><a href="{% pageurl article %}">{{ article.title }}</a></h2>

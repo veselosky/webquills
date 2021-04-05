@@ -73,6 +73,20 @@ class HomePage(Page):
 
     body = StreamField(BaseStreamBlock(), verbose_name="Page body", blank=True)
 
+    def get_context(self, request, *args, **kwargs):
+        context = super().get_context(request, *args, **kwargs)
+        context["featured_articles"] = (
+            ArticlePage.objects.descendant_of(self)
+            .live()
+            .filter(tags__name="hpfeatured")
+        )
+        context["recent_articles"] = (
+            ArticlePage.objects.descendant_of(self)
+            .live()
+            .order_by("-first_published_at")[:26]
+        )
+        return context
+
     @property
     def published(self):
         "Datetime of publication for copyright purposes"
