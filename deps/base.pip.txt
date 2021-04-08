@@ -1,6 +1,10 @@
+# coderedcms is tied to a specific wagtail version. Upgrade them together.
+coderedcms >=0.20, <0.21
 django-bootstrap4
 django-environ
 django-redis
 pillow
-wagtail >=2.12, < 2.13
+# coderedcms is tied to a specific wagtail version. Upgrade them together.
+# wagtail is tied to specific Django versions, so this will hold back Django upgrades too
+wagtail >=2.11, < 2.12
 wagtailfontawesome

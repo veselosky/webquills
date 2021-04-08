@@ -16,6 +16,8 @@ import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+# CodeRedCMS chokes if this is not present:
+PROJECT_DIR = BASE_DIR
 
 # Get environment settings
 env = environ.Env()
@@ -106,9 +108,13 @@ INSTALLED_APPS = [
     "webquills.core",
     "webquills.search",
     # third party apps
+    "coderedcms",
+    "wagtailcache",  # Required by CodeRed, but we don't use
+    "wagtailimportexport",  # Required by CodeRed, but we don't use
     "bootstrap4",
     # Wagtail extras
     "wagtail.contrib.modeladmin",
+    "wagtail.contrib.table_block",
     "wagtail.contrib.settings",
     "wagtailfontawesome",
     # Stock wagtail

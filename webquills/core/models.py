@@ -3,6 +3,11 @@ from pathlib import Path
 from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from coderedcms.models import (
+    CoderedArticlePage,
+    CoderedArticleIndexPage,
+    CoderedWebPage,
+)
 from modelcluster.fields import ParentalKey
 from modelcluster.contrib.taggit import ClusterTaggableManager
 from taggit.models import TaggedItemBase
@@ -159,15 +164,59 @@ class CallToAction(models.Model):
 
 class ArticleTag(TaggedItemBase):
     content_object = ParentalKey(
-        "ArticlePage", related_name="tagged_items", on_delete=models.CASCADE
+        "ArticlePage", related_name="tagged_articles", on_delete=models.CASCADE
     )
 
 
 ###############################################################################
 # Core Page types
 ###############################################################################
-class HomePage(Page):
+class HomePage(CoderedWebPage):
+    class Meta:
+        verbose_name = _("home page")
+        verbose_name_plural = _("home pages")
+
+    template = "coderedcms/pages/web_page.html"
+
+
+class ArticlePage(CoderedArticlePage):
+    class Meta:
+        verbose_name = _("article")
+        verbose_name_plural = _("articles")
+        ordering = ["-first_published_at"]
+
+    parent_page_types = ["webquills.CategoryPage", "webquills.HomePage"]
+
+    template = "coderedcms/pages/article_page.html"
+    amp_template = "coderedcms/pages/article_page.amp.html"
+    search_template = "coderedcms/pages/article_page.search.html"
+
+
+class CategoryPage(CoderedArticleIndexPage):
+    """
+    Shows a list of article sub-pages.
+    """
+
+    class Meta:
+        verbose_name = _("category page")
+        verbose_name_plural = _("category pages")
+
+    # Override to specify custom index ordering choice/default.
+    index_query_pagemodel = "webquills.ArticlePage"
+
+    subpage_types = ["webquills.ArticlePage"]
+
+    template = "coderedcms/pages/article_index_page.html"
+
+
+###############################################################################
+# Original Core Page types (before CodeRed)
+###############################################################################
+class OriginalHomePage(Page):
     """Site home page"""
+
+    class Meta:
+        abstract = True  # To prevent migrations while I fiddle around
 
     body = StreamField(BaseStreamBlock(), verbose_name="Page body", blank=True)
     cta = models.ForeignKey(
@@ -210,7 +259,7 @@ class HomePage(Page):
     ]
 
 
-class CategoryPage(Page):
+class OriginalCategoryPage(Page):
     """## Category index page
     The category index page is a list page listing articles in a category (children of
     the category page) in reverse chronological order. It may have a featured section
@@ -221,6 +270,9 @@ class CategoryPage(Page):
     Category pages appear in the site menu by default. There should be few of them,
     each covering a broad topic. They must be parented to the home page.
     """
+
+    class Meta:
+        abstract = True  # To prevent migrations while I fiddle around
 
     show_in_menus_default = True
     parent_page_types = ["webquills.HomePage"]
@@ -265,7 +317,7 @@ class CategoryPage(Page):
     ]
 
 
-class ArticlePage(Page):
+class OriginalArticlePage(Page):
     """## Article page
     The Article page is the primary container for content. Articles come in two
     flavors (we use the same model for both): sub-topics, and major topics. Sub-topic
@@ -276,6 +328,9 @@ class ArticlePage(Page):
     Sub-topic articles should be children of a category. Major topic articles may be
     children of a category page, or of the home page.
     """
+
+    class Meta:
+        abstract = True  # To prevent migrations while I fiddle around
 
     parent_page_types = ["webquills.HomePage", "webquills.CategoryPage"]
     subpage_types = []  # Articles do not have subpages
