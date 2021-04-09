@@ -1,38 +1,145 @@
+import os
 from pathlib import Path
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone, text
 from django.utils.translation import gettext_lazy as _
-from modelcluster.fields import ParentalKey
-from modelcluster.contrib.taggit import ClusterTaggableManager
-from taggit.models import TaggedItemBase
-from wagtail.admin.edit_handlers import (
-    FieldPanel,
-    FieldRowPanel,
-    InlinePanel,
-    MultiFieldPanel,
-    PageChooserPanel,
-    StreamFieldPanel,
-)
-from wagtail.contrib.settings.models import BaseSetting, register_setting
-from wagtail.core.fields import RichTextField, StreamField
-from wagtail.core.models import Collection, Page
-from wagtail.images import get_image_model_string
-from wagtail.images.edit_handlers import ImageChooserPanel
-import wagtail.images.models as wagtail_images
-from wagtail.search import index
-from wagtail.snippets.models import register_snippet
+from tinymce.models import HTMLField
+from taggit.managers import TaggableManager
 
-from webquills.core.blocks import BaseStreamBlock
 
-image_model_name = get_image_model_string()
+###############################################################################
+# Image model and related stuff
+###############################################################################
+def get_upload_to(instance, filename):
+    """
+    Calculate the upload destination for an image file.
+    """
+    folder_name = "uploads"
+    filename = text.slugify(filename, allow_unicode=False)
+    filename = instance.file.field.storage.get_valid_name(filename)
+
+    # Truncate filename so it fits in the 100 character limit
+    # https://code.djangoproject.com/ticket/9893
+    full_path = os.path.join(folder_name, filename)
+    if len(full_path) >= 95:
+        chars_to_trim = len(full_path) - 94
+        prefix, extension = os.path.splitext(filename)
+        filename = prefix[:-chars_to_trim] + extension
+        full_path = os.path.join(folder_name, filename)
+
+    return full_path
+
+
+class Image(models.Model):
+    """
+    The Webquills Image model is largely cribbed from Wagtail's Image.
+    """
+
+    class Meta:
+        pass
+
+    name = models.CharField(max_length=255, verbose_name=_("name"))
+    file = models.ImageField(
+        verbose_name=_("file"),
+        upload_to=get_upload_to,
+        width_field="width",
+        height_field="height",
+    )
+    width = models.IntegerField(verbose_name=_("width"), editable=False)
+    height = models.IntegerField(verbose_name=_("height"), editable=False)
+    alt_text = models.CharField(_("alt text"), blank=True, max_length=255)
+    created_at = models.DateTimeField(
+        verbose_name=_("created at"), auto_now_add=True, db_index=True
+    )
+    uploaded_by_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("uploaded by user"),
+        null=True,
+        blank=True,
+        editable=False,
+        on_delete=models.SET_NULL,
+    )
+
+    tags = TaggableManager(help_text=None, blank=True, verbose_name=_("tags"))
+
+    focal_point_x = models.PositiveIntegerField(null=True, blank=True)
+    focal_point_y = models.PositiveIntegerField(null=True, blank=True)
+    focal_point_width = models.PositiveIntegerField(null=True, blank=True)
+    focal_point_height = models.PositiveIntegerField(null=True, blank=True)
+
+    file_size = models.PositiveIntegerField(null=True, editable=False)
+
+    def save(self, *args, **kwargs) -> None:
+        """
+        Overridden to keep some fields up to date with the underlying file. Note that
+        Django itself populates the width and height fields.
+        """
+        self.file_size = self.file.size
+        return super().save(*args, **kwargs)
+
+    def is_stored_locally(self):
+        """
+        Returns True if the image is hosted on the local filesystem
+        """
+        try:
+            self.file.path
+
+            return True
+        except NotImplementedError:
+            return False
+
+    @property
+    def is_portrait(self):
+        return self.width < self.height
+
+    @property
+    def is_landscape(self):
+        return self.height < self.width
+
+    @property
+    def basename(self):
+        return os.path.basename(self.file.name)
 
 
 ###############################################################################
 # Ancillary models used by pages or exposed in CMS
 ###############################################################################
-@register_setting
-class SiteMeta(BaseSetting):
+class CopyrightLicense(models.Model):
+    class Meta:
+        verbose_name = _("copyright license")
+        verbose_name_plural = _("copyright licenses")
+
+    name = models.CharField(
+        _("name"),
+        blank=False,
+        max_length=50,
+        help_text=_("A short name for use in the admin"),
+    )
+    copyright_license_notice = HTMLField(
+        _("copyright license notice"),
+        default=_("All rights reserved."),
+        help_text=_("Text to follow the copyright notice indicating any license"),
+    )
+    copyright_license_url = models.CharField(
+        _("copyright license URL"),
+        blank=True,
+        null=True,
+        max_length=255,
+        help_text=_("Link to the full copyright license"),
+    )
+
+
+# TODO custom manager with select_related(copyright_license)
+class SiteMeta(models.Model):
+    class Meta:
+        verbose_name = _("site metadata")
+        verbose_name_plural = _("site metadata")
+
+    site = models.OneToOneField(
+        "sites.Site", on_delete=models.CASCADE, primary_key=True
+    )
     tagline = models.CharField(
         _("tagline"),
         max_length=255,
@@ -43,16 +150,15 @@ class SiteMeta(BaseSetting):
     copyright_holder = models.CharField(
         _("copyright holder"),
         max_length=255,
-        default=settings.WAGTAIL_SITE_NAME,
+        default="WebQuills",
         help_text=_("Owner of the copyright (in footer notice)"),
     )
-    # TODO Add a License table and FK
-    copyright_license_notice = RichTextField(
-        _("copyright license notice"),
-        default=_("All rights reserved."),
-        help_text=_(
-            "Text to follow the copyright notice indicating any license, e.g. CC-BY"
-        ),
+    copyright_license = models.ForeignKey(
+        CopyrightLicense,
+        on_delete=models.SET_NULL,
+        verbose_name=_("copyright license"),
+        blank=True,
+        null=True,
     )
 
 
@@ -63,7 +169,6 @@ def get_cta_template_path():
     return cta_path
 
 
-@register_snippet
 class CallToAction(models.Model):
     "A home page module calling visitor to take an important action"
 
@@ -80,14 +185,13 @@ class CallToAction(models.Model):
     )
 
     headline = models.CharField(_("headline"), max_length=255, blank=False, null=False)
-    lead = StreamField(
-        BaseStreamBlock(),
+    lead = HTMLField(
         verbose_name=_("lead paragraph"),
         blank=True,
-        help_text=_("Paragraph leading reader to the action"),
+        help_text=_("Paragraph leading reader to the action."),
     )
     picture = models.ForeignKey(
-        wagtail_images.Image,
+        Image,
         verbose_name=_("picture"),
         blank=True,
         null=True,
@@ -98,17 +202,6 @@ class CallToAction(models.Model):
         max_length=50,
         blank=False,
         help_text=_("The label on the action button or link"),
-    )
-    landing_page = models.ForeignKey(
-        Page,
-        verbose_name=_("landing page"),
-        blank=True,
-        null=True,
-        on_delete=models.PROTECT,
-        help_text=_(
-            "CTA will either link/submit to a landing page on site, or to an external "
-            "target URL. Choose only one."
-        ),
     )
     target_url = models.URLField(
         _("target URL"),
@@ -139,37 +232,80 @@ class CallToAction(models.Model):
     def link(self):
         return self.target_url or self.landing_page.get_url()
 
-    # Wagtail Admin
-    panels = [
-        FieldPanel("admin_name"),
-        FieldPanel("headline"),
-        FieldRowPanel(
-            [
-                PageChooserPanel("landing_page"),
-                FieldPanel("target_url"),
-            ],
-            heading=_("Target page or URL"),
-        ),
-        FieldPanel("action_label"),
-        StreamFieldPanel("lead"),
-        ImageChooserPanel("picture"),
-        FieldPanel("custom_template"),
-    ]
 
-
-class ArticleTag(TaggedItemBase):
-    content_object = ParentalKey(
-        "ArticlePage", related_name="tagged_items", on_delete=models.CASCADE
-    )
+class Status(models.TextChoices):
+    WITHHELD = "withheld", _("Draft (withheld)")
+    USABLE = "usable", _("Publish (usable)")
+    CANCELLED = "cancelled", _("Unpublish (cancelled)")
 
 
 ###############################################################################
 # Core Page types
 ###############################################################################
-class HomePage(Page):
+class PageManager(models.Manager):
+    def live(self):
+        return self.filter(
+            models.Q(expired__isnull=True) | models.Q(expired__gt=timezone.now()),
+            status=Status.USABLE,
+            published__lte=timezone.now(),
+        )
+
+
+class AbstractPage(models.Model):
+    class Meta:
+        abstract = True
+
+    objects = PageManager()
+
+    # Common fields for all pages
+    seo_title = models.CharField(_("page title"), max_length=255, blank=True)
+    seo_description = models.CharField(_("description"), max_length=255, blank=True)
+    headline = models.CharField(_("headline"), max_length=255)
+
+    status = models.CharField(
+        _("status"),
+        max_length=50,
+        choices=Status.choices,
+        default=Status.WITHHELD,
+        db_index=True,
+        help_text=_("Controls visibility (must be Published/Usable to be visible)."),
+    )
+    published = models.DateTimeField(
+        _("published"),
+        blank=False,
+        null=False,
+        default=timezone.now,
+        db_index=True,
+        help_text=_(
+            "Publication date for copyright purposes. Also controls visibility (must "
+            "be published in the past to be visible)."
+        ),
+    )
+    updated_at = models.DateTimeField(
+        _("updated"), auto_now=False, auto_now_add=False, blank=True, null=True
+    )
+    expired = models.DateTimeField(
+        _("expired"),
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text=_(
+            "Time after which the content is no longer valid. Controls visibility "
+            "(expired, if set, must be in the future to be visible)."
+        ),
+    )
+
+    @property
+    def title(self):
+        return self.seo_title or self.headline
+
+    def __str__(self):
+        return self.name
+
+
+class HomePage(AbstractPage):
     """Site home page"""
 
-    body = StreamField(BaseStreamBlock(), verbose_name="Page body", blank=True)
     cta = models.ForeignKey(
         CallToAction,
         verbose_name=_("call to action"),
@@ -178,39 +314,8 @@ class HomePage(Page):
         on_delete=models.SET_NULL,
     )
 
-    def get_context(self, request, *args, **kwargs):
-        context = super().get_context(request, *args, **kwargs)
-        context["featured_articles"] = (
-            ArticlePage.objects.descendant_of(self)
-            .live()
-            .filter(tags__name="hpfeatured")
-        )
-        context["recent_articles"] = (
-            ArticlePage.objects.descendant_of(self)
-            .live()
-            .order_by("-first_published_at")[:26]
-        )
-        return context
 
-    @property
-    def published(self):
-        "Datetime of publication for copyright purposes"
-        if self.live:
-            return self.last_published_at
-        return self.go_live_at
-
-    @property
-    def updated(self):
-        "Datetime of the most recent significant editorial update"
-        return self.published
-
-    content_panels = Page.content_panels + [
-        FieldPanel("cta"),
-        StreamFieldPanel("body"),
-    ]
-
-
-class CategoryPage(Page):
+class CategoryPage(AbstractPage):
     """## Category index page
     The category index page is a list page listing articles in a category (children of
     the category page) in reverse chronological order. It may have a featured section
@@ -223,49 +328,21 @@ class CategoryPage(Page):
     """
 
     show_in_menus_default = True
-    parent_page_types = ["webquills.HomePage"]
-    subpage_types = ["webquills.ArticlePage"]  # Allow subcategories?
 
-    intro = StreamField(BaseStreamBlock(), verbose_name=_("intro"), blank=True)
+    intro = HTMLField(
+        verbose_name=_("intro"),
+        blank=True,
+    )
     featured_image = models.ForeignKey(
-        image_model_name,
+        Image,
         verbose_name=_("featured image"),
         blank=True,
         null=True,
         on_delete=models.SET_NULL,
     )
 
-    def get_context(self, request, *args, **kwargs):
-        context = super().get_context(request, *args, **kwargs)
-        context["featured_articles"] = (
-            ArticlePage.objects.child_of(self).live().filter(tags__name="featured")
-        )
-        context["recent_articles"] = (
-            ArticlePage.objects.child_of(self)
-            .live()
-            .order_by("-first_published_at")[:26]
-        )
-        return context
 
-    @property
-    def published(self):
-        "Datetime of publication for copyright purposes"
-        if self.live:
-            return self.last_published_at
-        return self.go_live_at
-
-    @property
-    def updated(self):
-        "Datetime of the most recent significant editorial update"
-        return self.published
-
-    content_panels = Page.content_panels + [
-        ImageChooserPanel("featured_image"),
-        StreamFieldPanel("intro"),
-    ]
-
-
-class ArticlePage(Page):
+class ArticlePage(AbstractPage):
     """## Article page
     The Article page is the primary container for content. Articles come in two
     flavors (we use the same model for both): sub-topics, and major topics. Sub-topic
@@ -277,41 +354,19 @@ class ArticlePage(Page):
     children of a category page, or of the home page.
     """
 
-    parent_page_types = ["webquills.HomePage", "webquills.CategoryPage"]
-    subpage_types = []  # Articles do not have subpages
-
     # Stored database fields
-    body = StreamField(
-        BaseStreamBlock(),
+    body = HTMLField(
         verbose_name=_("article body"),
         blank=True,
-        help_text=_("Article text, excluding the headline (provided by 'title')"),
+        help_text=_("Article text, excluding the headline (provided by 'title'). "),
     )
     featured_image = models.ForeignKey(
-        image_model_name,
+        Image,
         verbose_name=_("featured image"),
         blank=True,
         null=True,
         on_delete=models.SET_NULL,
     )
-    orig_published_at = models.DateTimeField(
-        verbose_name=_("original publish date"),
-        db_index=True,
-        blank=True,
-        null=True,
-        help_text=_(
-            "If published before being added to this site, set the original publish "
-            "date here."
-        ),
-    )
-    updated_at = models.DateTimeField(
-        verbose_name=_("updated date"),
-        db_index=True,
-        blank=True,
-        null=True,
-        help_text=_("Date of the most recent significant editorial update, if any."),
-    )
-    tags = ClusterTaggableManager(through=ArticleTag, blank=True)
 
     # Additional properties and methods
     @property
@@ -330,33 +385,3 @@ class ArticlePage(Page):
         ):
             return self.body[0]
         return self.search_description
-
-    @property
-    def published(self):
-        "Datetime of original publication"
-        if self.live:
-            return self.orig_published_at or self.first_published_at
-        return self.go_live_at
-
-    @property
-    def updated(self):
-        "Datetime of the most recent significant editorial update"
-        return self.updated_at or self.published
-
-    # Wagtail Admin Panels
-    content_panels = Page.content_panels + [
-        ImageChooserPanel("featured_image"),
-        StreamFieldPanel("body"),
-    ]
-
-    settings_panels = [
-        FieldRowPanel(
-            [
-                FieldPanel("orig_published_at"),
-                FieldPanel("updated_at"),
-            ],
-            heading=_("Dates"),
-        )
-    ] + Page.settings_panels
-
-    promote_panels = [FieldPanel("tags")] + Page.promote_panels

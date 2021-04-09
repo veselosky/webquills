@@ -1,6 +1,5 @@
 django-bootstrap4
 django-environ
 django-redis
+django-tinymce
 pillow
-wagtail >=2.12, < 2.13
-wagtailfontawesome

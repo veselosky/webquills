@@ -1,5 +1,5 @@
 # This file specifies the version of Django used in production, and pulls
 # other production requirements from the base.pip.txt. This makes it easier
 # to test against multiple Django versions.
-django==3.1.7
+django >=3.2, <4.0
 -r deps/base.pip.txt
