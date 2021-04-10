@@ -2,9 +2,14 @@ from django.conf import settings
 from django.urls import include, path
 from django.contrib import admin
 
+from webquills.core import views
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("", views.homepage, name="home"),
+    path("<category_slug>/", views.category, name="category"),
+    path("<category_slug>/<article_slug>/", views.article, name="article"),
 ]
 
 if settings.DEBUG:

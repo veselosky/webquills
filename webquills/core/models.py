@@ -3,6 +3,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone, text
 from django.utils.translation import gettext_lazy as _
 from tinymce.models import HTMLField
@@ -138,7 +139,7 @@ class SiteMeta(models.Model):
         verbose_name_plural = _("site metadata")
 
     site = models.OneToOneField(
-        "sites.Site", on_delete=models.CASCADE, primary_key=True
+        "sites.Site", on_delete=models.CASCADE, primary_key=True, related_name="meta"
     )
     tagline = models.CharField(
         _("tagline"),
@@ -261,6 +262,7 @@ class AbstractPage(models.Model):
     seo_title = models.CharField(_("page title"), max_length=255, blank=True)
     seo_description = models.CharField(_("description"), max_length=255, blank=True)
     headline = models.CharField(_("headline"), max_length=255)
+    slug = models.SlugField(_("slug"))
 
     status = models.CharField(
         _("status"),
@@ -294,17 +296,22 @@ class AbstractPage(models.Model):
             "(expired, if set, must be in the future to be visible)."
         ),
     )
+    tags = TaggableManager()
 
     @property
     def title(self):
         return self.seo_title or self.headline
 
     def __str__(self):
-        return self.name
+        return self.headline
 
 
 class HomePage(AbstractPage):
-    """Site home page"""
+    class Meta:
+        verbose_name = _("home page")
+        verbose_name_plural = _("home pages")
+        ordering = ["-published"]
+        get_latest_by = "published"
 
     cta = models.ForeignKey(
         CallToAction,
@@ -314,18 +321,19 @@ class HomePage(AbstractPage):
         on_delete=models.SET_NULL,
     )
 
+    def get_absolute_url(self):
+        return reverse("home")
+
+    def get_template(self):
+        return "webquills/home_page.html"
+
 
 class CategoryPage(AbstractPage):
-    """## Category index page
-    The category index page is a list page listing articles in a category (children of
-    the category page) in reverse chronological order. It may have a featured section
-    at the top for featured or "sticky" articles. The page intro appears above the
-    featured section as an introduction to the category. The page body is not editable,
-    but provides a list of child pages.
-
-    Category pages appear in the site menu by default. There should be few of them,
-    each covering a broad topic. They must be parented to the home page.
-    """
+    class Meta:
+        verbose_name = _("category page")
+        verbose_name_plural = _("category pages")
+        ordering = ["-published"]
+        get_latest_by = "published"
 
     show_in_menus_default = True
 
@@ -341,20 +349,24 @@ class CategoryPage(AbstractPage):
         on_delete=models.SET_NULL,
     )
 
+    def get_absolute_url(self):
+        return reverse("category", kwargs={"slug": self.slug})
+
+    def get_template(self):
+        return "webquills/category_page.html"
+
 
 class ArticlePage(AbstractPage):
-    """## Article page
-    The Article page is the primary container for content. Articles come in two
-    flavors (we use the same model for both): sub-topics, and major topics. Sub-topic
-    articles are brief (300–3,000 words) and cover a single niche subject. Major topic
-    articles are long (5,000–20,000 words) and cover a broad topic in detail,
-    comprising several sections with sub-heads.
-
-    Sub-topic articles should be children of a category. Major topic articles may be
-    children of a category page, or of the home page.
-    """
+    class Meta:
+        verbose_name = _("article page")
+        verbose_name_plural = _("article pages")
+        ordering = ["-published"]
+        get_latest_by = "published"
 
     # Stored database fields
+    category = models.ForeignKey(
+        CategoryPage, verbose_name=_("category"), on_delete=models.PROTECT
+    )
     body = HTMLField(
         verbose_name=_("article body"),
         blank=True,
@@ -385,3 +397,11 @@ class ArticlePage(AbstractPage):
         ):
             return self.body[0]
         return self.search_description
+
+    def get_absolute_url(self):
+        return reverse(
+            "article", kwargs={"category": self.category.slug, "slug": self.slug}
+        )
+
+    def get_template(self):
+        return "webquills/article_page.html"
