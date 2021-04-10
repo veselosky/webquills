@@ -5,8 +5,9 @@ Django model managers. Commands can then be called from a management command
 (i.e. the CLI), a view, a signal, etc.
 """
 from django.conf import settings
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
+
+from webquills.core.models import SiteMeta
 
 
 def initialize_site():
@@ -24,5 +25,6 @@ def initialize_site():
             domain="webquills.com",
             name="WebQuills",
         )
-
+    if not hasattr(site, "meta"):
+        SiteMeta.objects.create(site=site)
     site.save()
