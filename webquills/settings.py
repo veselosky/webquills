@@ -23,6 +23,16 @@ DOTENV = BASE_DIR / ".env"
 if DOTENV.exists() and not env("IGNORE_ENV_FILE", default=False):
     environ.Env.read_env(DOTENV.open())
 
+# Internationalization
+# https://docs.djangoproject.com/en/3.2/topics/i18n/
+LANGUAGE_CODE = "en-US"
+TIME_ZONE = "America/New_York"
+USE_I18N = True
+USE_L10N = True
+USE_TZ = True
+
+SITE_ID = 1
+
 #######################################################################
 # Integrations/Resources: settings likely to vary between environments
 #######################################################################
@@ -58,6 +68,17 @@ if not MEDIA_ROOT.exists():
 # See https://docs.djangoproject.com/en/3.1/ref/contrib/staticfiles/#manifeststaticfilesstorage
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
 
+# CELERY settings
+# If the environment has not provided settings, assume there is no broker
+# and run celery tasks in-process. This means you MUST provide
+# CELERY_TASK_ALWAYS_EAGER=False in your environment to actually use celery.
+CELERY_TASK_ALWAYS_EAGER = env("CELERY_TASK_ALWAYS_EAGER", default=True)
+CELERY_TASK_EAGER_PROPAGATES = env("CELERY_TASK_EAGER_PROPAGATES", default=True)
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/7")
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="")
+CELERY_TIME_ZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
 #######################################################################
 # Application Composition: Fixed values regardless of environment.
 #######################################################################
@@ -74,6 +95,7 @@ INSTALLED_APPS = [
     "webquills.core",
     # third party apps
     "bootstrap4",
+    "django_celery_beat",
     "taggit",
     "tinymce",
     # core Django apps
@@ -118,16 +140,6 @@ TEMPLATES = [
         },
     }
 ]
-
-# Internationalization
-# https://docs.djangoproject.com/en/2.2/topics/i18n/
-LANGUAGE_CODE = "en-US"
-TIME_ZONE = "America/New_York"
-USE_I18N = True
-USE_L10N = True
-USE_TZ = True
-
-SITE_ID = 1
 
 #######################################################################
 # Configure 3rd party modules we use.
