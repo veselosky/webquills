@@ -1,107 +1,14 @@
-import os
 from pathlib import Path
 
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
-from django.utils import timezone, text
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from tinymce.models import HTMLField
 from taggit.managers import TaggableManager
 
-
-###############################################################################
-# Image model and related stuff
-###############################################################################
-def get_upload_to(instance, filename):
-    """
-    Calculate the upload destination for an image file.
-    """
-    folder_name = "uploads"
-    filename = text.slugify(filename, allow_unicode=False)
-    filename = instance.file.field.storage.get_valid_name(filename)
-
-    # Truncate filename so it fits in the 100 character limit
-    # https://code.djangoproject.com/ticket/9893
-    full_path = os.path.join(folder_name, filename)
-    if len(full_path) >= 95:
-        chars_to_trim = len(full_path) - 94
-        prefix, extension = os.path.splitext(filename)
-        filename = prefix[:-chars_to_trim] + extension
-        full_path = os.path.join(folder_name, filename)
-
-    return full_path
-
-
-class Image(models.Model):
-    """
-    The Webquills Image model is largely cribbed from Wagtail's Image.
-    """
-
-    class Meta:
-        pass
-
-    name = models.CharField(max_length=255, verbose_name=_("name"))
-    file = models.ImageField(
-        verbose_name=_("file"),
-        upload_to=get_upload_to,
-        width_field="width",
-        height_field="height",
-    )
-    width = models.IntegerField(verbose_name=_("width"), editable=False)
-    height = models.IntegerField(verbose_name=_("height"), editable=False)
-    alt_text = models.CharField(_("alt text"), blank=True, max_length=255)
-    created_at = models.DateTimeField(
-        verbose_name=_("created at"), auto_now_add=True, db_index=True
-    )
-    uploaded_by_user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        verbose_name=_("uploaded by user"),
-        null=True,
-        blank=True,
-        editable=False,
-        on_delete=models.SET_NULL,
-    )
-
-    tags = TaggableManager(help_text=None, blank=True, verbose_name=_("tags"))
-
-    focal_point_x = models.PositiveIntegerField(null=True, blank=True)
-    focal_point_y = models.PositiveIntegerField(null=True, blank=True)
-    focal_point_width = models.PositiveIntegerField(null=True, blank=True)
-    focal_point_height = models.PositiveIntegerField(null=True, blank=True)
-
-    file_size = models.PositiveIntegerField(null=True, editable=False)
-
-    def save(self, *args, **kwargs) -> None:
-        """
-        Overridden to keep some fields up to date with the underlying file. Note that
-        Django itself populates the width and height fields.
-        """
-        self.file_size = self.file.size
-        return super().save(*args, **kwargs)
-
-    def is_stored_locally(self):
-        """
-        Returns True if the image is hosted on the local filesystem
-        """
-        try:
-            self.file.path
-
-            return True
-        except NotImplementedError:
-            return False
-
-    @property
-    def is_portrait(self):
-        return self.width < self.height
-
-    @property
-    def is_landscape(self):
-        return self.height < self.width
-
-    @property
-    def basename(self):
-        return os.path.basename(self.file.name)
+from .images import Image
 
 
 ###############################################################################

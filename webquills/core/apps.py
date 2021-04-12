@@ -13,11 +13,8 @@ class CoreConfig(AppConfig):
     # ourselves...
     label = "webquills"
 
-    def get_image_sizes(self):
-        """
-        Return a list of image sizes (as (x,y) tuples) to be pre-generated for
-        uploaded images.
-        """
-        if hasattr(settings, "WEBQUILLS_IMAGE_SIZES"):
-            return getattr(settings, "WEBQUILLS_IMAGE_SIZES")
-        return ((1000, 1000), (300, 300))
+    def get_default_image_size(self):
+        return (1000, 1000)
+
+    def get_image_media_dir(self):
+        return "uploads"
