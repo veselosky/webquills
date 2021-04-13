@@ -105,13 +105,13 @@ def fillcrop_image(instance: "Image", *, width: int, height: int):
             temp_width = int(height * instance.aspect_ratio)
             image.thumbnail([temp_width, height])  # transform in memory
             x = int((temp_width - width) / 2)  # crop from center
-            image.crop([x, 0, x + width, height])
+            image = image.crop([x, 0, x + width, height])
         else:
             # dest is wider, fit the width and crop the height
             temp_height = int(width / instance.aspect_ratio)
             image.thumbnail([width, temp_height])  # transform in memory
             y = int((temp_height - height) / 2)  # crop from center
-            image.crop([0, y, width, y + height])
+            image = image.crop([0, y, width, y + height])
 
         # Store to local file. Suffix needed for img format detection
         tmpfile = tempfile.NamedTemporaryFile(
@@ -165,6 +165,7 @@ class Image(models.Model):
     thumbs = models.JSONField(
         _("thumbnails"),
         default=list,  # New list each time, not shared among all instances!
+        blank=True,
         help_text=_("Resized versions of the image that have been generated"),
     )
 
@@ -192,9 +193,9 @@ class Image(models.Model):
 
         # Currently only support 2 ops, make a registry if you want to add more
         if op == "resize":
-            newpath = resize_image(self.pk, **kwargs)
+            newpath = resize_image(self, **kwargs)
         elif op == "fillcrop":
-            newpath = fillcrop_image(self.pk, **kwargs)
+            newpath = fillcrop_image(self, **kwargs)
         else:
             raise ValueError(f"Invalid image op: {op}")
         # Cache the generated thumb's path for future use
@@ -235,6 +236,9 @@ class Image(models.Model):
     def original(self):
         "Return URL of the original image as uploaded."
         return self.file.url
+
+    def __str__(self) -> str:
+        return self.name
 
     @contextmanager
     def open_file(self):

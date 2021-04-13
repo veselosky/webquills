@@ -41,7 +41,7 @@ class TestImageModel(TestCase):
 
                 resp = img.get_thumb("resize", width=width, height=height)
                 # should have called func with width and height
-                assert resizer.called_once_with("resize", width=width, height=height)
+                assert resizer.called_once_with(img, width=width, height=height)
                 # should return the path we gave it
                 assert resp == resizer.return_value
                 # should save in its thumbs field
@@ -77,9 +77,32 @@ class TestImageModel(TestCase):
                     assert test_img.width == width
                     assert test_img.height <= height
 
-    def test_fillcrop_image(self):
+    def test_fillcrop_image_portrait(self):
+        width = 400
+        height = 600
+        name = "test_image.jpg"
+        here = Path(__file__).parent
+        image_file = here / "cathryn-lavery-fMD_Cru6OTk-unsplash.jpg"
+        # Create a temp dir to act as our MEDIA_ROOT during testing
+        media_root = TemporaryDirectory()
+        with self.settings(MEDIA_ROOT=media_root.name):
+            with image_file.open("rb") as im:
+                img = Image(file=ImageFile(im), name=name)
+                img.save()
+
+                # TEST BEGINS
+                result = fillcrop_image(img, width=width, height=height)
+                result_file = Path(media_root.name) / result
+                assert result_file.exists()
+                assert result_file.stat().st_size > 0
+                with pillow.Image.open(result_file) as test_img:
+                    # fillcrop dimensions should match exactly
+                    assert test_img.width == width
+                    assert test_img.height == height
+
+    def test_fillcrop_image_landscape(self):
         width = 600
-        height = 400
+        height = 100
         name = "test_image.jpg"
         here = Path(__file__).parent
         image_file = here / "cathryn-lavery-fMD_Cru6OTk-unsplash.jpg"

@@ -39,7 +39,11 @@ class CopyrightLicense(models.Model):
     )
 
 
-# TODO custom manager with select_related(copyright_license)
+class SiteMetaManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().select_related("copyright_license")
+
+
 class SiteMeta(models.Model):
     class Meta:
         verbose_name = _("site metadata")
@@ -48,6 +52,7 @@ class SiteMeta(models.Model):
     site = models.OneToOneField(
         "sites.Site", on_delete=models.CASCADE, primary_key=True, related_name="meta"
     )
+    name = models.CharField(_("name"), max_length=50)
     tagline = models.CharField(
         _("tagline"),
         max_length=255,
@@ -68,6 +73,7 @@ class SiteMeta(models.Model):
         blank=True,
         null=True,
     )
+    objects = SiteMetaManager()
 
 
 def get_cta_template_path():
@@ -203,11 +209,17 @@ class AbstractPage(models.Model):
             "(expired, if set, must be in the future to be visible)."
         ),
     )
-    tags = TaggableManager()
+    tags = TaggableManager(blank=True)
 
     @property
     def title(self):
         return self.seo_title or self.headline
+
+    @property
+    def updated(self):
+        if self.updated_at:
+            return self.updated_at
+        return self.published
 
     def __str__(self):
         return self.headline
@@ -257,10 +269,15 @@ class CategoryPage(AbstractPage):
     )
 
     def get_absolute_url(self):
-        return reverse("category", kwargs={"slug": self.slug})
+        return reverse("category", kwargs={"category_slug": self.slug})
 
     def get_template(self):
         return "webquills/category_page.html"
+
+
+class ArticleManager(PageManager):
+    def get_queryset(self):
+        return super().get_queryset().select_related("category", "featured_image")
 
 
 class ArticlePage(AbstractPage):
@@ -286,6 +303,7 @@ class ArticlePage(AbstractPage):
         null=True,
         on_delete=models.SET_NULL,
     )
+    objects = ArticleManager()
 
     # Additional properties and methods
     @property
@@ -296,18 +314,13 @@ class ArticlePage(AbstractPage):
     @property
     def excerpt(self):
         "Rich text excerpt for use in teases and feed content."
-        # By convention, use the first block of the body if it is a text block.
-        if (
-            self.body
-            and self.body[0].block_type == "tease"
-            or self.body[0].block_type == "text"
-        ):
-            return self.body[0]
-        return self.search_description
+        # TODO Implement rich excerpt from article body
+        return self.seo_description
 
     def get_absolute_url(self):
         return reverse(
-            "article", kwargs={"category": self.category.slug, "slug": self.slug}
+            "article",
+            kwargs={"category_slug": self.category.slug, "article_slug": self.slug},
         )
 
     def get_template(self):
