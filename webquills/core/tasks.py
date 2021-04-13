@@ -7,7 +7,7 @@ Django model managers. Commands can then be called from a management command
 from django.conf import settings
 from django.contrib.sites.models import Site
 
-from webquills.core.models import SiteMeta
+from webquills.core.models import SiteMeta, HomePage, Status
 
 
 def initialize_site():
@@ -26,5 +26,17 @@ def initialize_site():
             name="WebQuills",
         )
     if not hasattr(site, "meta"):
-        SiteMeta.objects.create(site=site)
+        SiteMeta.objects.create(
+            site=site, name="WebQuills", tagline="Tips, Tools, & Tech for Writers"
+        )
     site.save()
+    site.refresh_from_db()
+
+    try:
+        hp = HomePage.objects.get(id=1)
+    except HomePage.DoesNotExist:
+        hp = HomePage.objects.create(
+            headline=site.name,
+            slug="default-home-page",
+            status=Status.USABLE,
+        )
