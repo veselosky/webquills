@@ -20,6 +20,7 @@ def homepage(request):
         "page": page,
         "featured_articles": featured_articles,
         "recent_articles": recent_articles,
+        "topmenu": CategoryPage.objects.live(),
     }
     return render(request, template, context)
 
@@ -40,6 +41,7 @@ def category(request, category_slug):
         "page": page,
         "featured_articles": featured_articles,
         "recent_articles": recent_articles,
+        "topmenu": CategoryPage.objects.live(),
     }
     return render(request, template, context)
 
@@ -51,5 +53,6 @@ def article(request, category_slug, article_slug):
     template = page.get_template()
     context = {
         "page": page,
+        "topmenu": CategoryPage.objects.live(),
     }
     return render(request, template, context)
