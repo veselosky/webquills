@@ -6,7 +6,7 @@ from django.core.files.images import ImageFile
 from django.test import TestCase
 import PIL as pillow
 
-from webquills.core.images import Image, resize_image, fillcrop_image
+from webquills.core.images import Image, Thumb, resize_image, fillcrop_image
 
 
 class TestImageModel(TestCase):
@@ -40,10 +40,11 @@ class TestImageModel(TestCase):
                 img.save()
 
                 resp = img.get_thumb("resize", width=width, height=height)
+                assert isinstance(resp, Thumb)
                 # should have called func with width and height
                 assert resizer.called_once_with(img, width=width, height=height)
                 # should return the path we gave it
-                assert resp == resizer.return_value
+                assert resp.path == resizer.return_value
                 # should save in its thumbs field
                 assert img.thumbs[0] == {
                     "op": "resize",

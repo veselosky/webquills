@@ -147,6 +147,24 @@ TEMPLATES = [
 TAGGIT_CASE_INSENSITIVE = True
 TAG_SPACES_ALLOWED = False
 
+TINYMCE_DEFAULT_CONFIG = {
+    "height": "320px",
+    "width": "960px",
+    "menubar": "edit view insert format tools table help",
+    "plugins": "advlist autoresize charmap code codesample help hr image imagetools "
+    "link lists media paste searchreplace table toc visualblocks visualchars wordcount",
+    "toolbar": "undo redo | bold italic strikethrough | styleselect | removeformat | "
+    "numlist bullist indent outdent | image | code",
+    "image_advtab": True,
+    "image_caption": True,
+    "image_class_list": [
+        {"title": "Responsive", "value": "img-fluid"},
+        {"title": "Left", "value": "float-left"},
+        {"title": "Right", "value": "float-right"},
+    ],
+    "image_list": "/mce/recent_images.json",
+}
+
 #######################################################################
 # DEVELOPMENT: If running in a dev environment, loosen restrictions
 # and add debugging tools.

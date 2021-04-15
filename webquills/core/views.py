@@ -1,6 +1,8 @@
+from django.apps import apps
+from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 
-from webquills.core.models import ArticlePage, CategoryPage, HomePage
+from webquills.core.models import ArticlePage, CategoryPage, HomePage, Image
 
 
 def homepage(request):
@@ -56,3 +58,21 @@ def article(request, category_slug, article_slug):
         "topmenu": CategoryPage.objects.live(),
     }
     return render(request, template, context)
+
+
+def tiny_image_list(request):
+    """
+    Returns a list of recently uploaded images, formatted for use by the TinyMCE
+    editor.
+    """
+    config = apps.get_app_config("webquills")
+    width, height = config.get_default_image_size()
+    images = Image.objects.order_by("created_at")[:24]
+    result = [
+        {
+            "title": img.name,
+            "value": img.get_thumb("resize", width=width, height=height).url,
+        }
+        for img in images
+    ]
+    return JsonResponse(result, safe=False)

@@ -7,6 +7,7 @@ from webquills.core import views
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("mce/recent_images.json", views.tiny_image_list, name="mce-recent-images"),
     path("", views.homepage, name="home"),
     # These patterns are very generic, so keep last in list
     path("<category_slug>/", views.category, name="category"),

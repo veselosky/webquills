@@ -1,6 +1,7 @@
 from contextlib import contextmanager
-import os
+from dataclasses import dataclass
 from pathlib import Path
+import os
 import tempfile
 
 from django.apps import apps
@@ -19,8 +20,8 @@ def get_upload_to(instance, filename):
     """
     Calculate the upload destination for an image file.
     """
-    # FIXME Hard-coded string "uploads" fragile, factor to constant.
-    folder_name = "uploads"
+    config = apps.get_app_config("webquills")
+    folder_name = config.get_image_media_dir()
     filename = Path(filename).name
     filename = instance.file.field.storage.get_valid_name(filename)
 
@@ -127,10 +128,24 @@ def fillcrop_image(instance: "Image", *, width: int, height: int):
     return saved_as
 
 
+@dataclass
+class Thumb:
+    "A helper class representing a transformed image."
+    op: str
+    kwargs: dict
+    path: str = ""
+
+    @property
+    def url(self) -> str:
+        return settings.MEDIA_URL + self.path
+
+
 class Image(models.Model):
     class Meta:
         verbose_name = _("image")
         verbose_name_plural = _("images")
+        ordering = ["-created_at"]
+        get_latest_by = "created_at"
 
     name = models.CharField(max_length=255, verbose_name=_("name"))
     file = models.ImageField(
@@ -180,7 +195,7 @@ class Image(models.Model):
         return super().save(*args, **kwargs)
 
     # params after op MUST be passed as kwargs
-    def get_thumb(self, op: str, **kwargs) -> str:
+    def get_thumb(self, op: str, **kwargs) -> Thumb:
         """
         Given `op` (operation) and `kwargs`, return the path (relative to MEDIA_ROOT) of
         an image file that has been transformed with the given op and kwargs.
@@ -189,7 +204,7 @@ class Image(models.Model):
             filter(lambda x: x["op"] == op and x["kwargs"] == kwargs, self.thumbs)
         )
         if found:  # just return, don't check if it exists
-            return found[0]["path"]
+            return Thumb(**found[0])
 
         # Currently only support 2 ops, make a registry if you want to add more
         if op == "resize":
@@ -203,7 +218,7 @@ class Image(models.Model):
         self.thumbs.append(thumb)
         self.save(update_fields=["thumbs"])
 
-        return newpath
+        return Thumb(**thumb)
 
     def is_stored_locally(self):
         """
