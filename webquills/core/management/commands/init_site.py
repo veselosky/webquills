@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from webquills.core.commands import initialize_site
+from webquills.core.tasks import initialize_site
 
 
 class Command(BaseCommand):

@@ -2,28 +2,11 @@
 
 This is the code that runs (or one day will run) webquills.com.
 
-## Design and things to do
+## Images: upload, resizing, cropping, etc
 
-[ ] 404 template
-[ ] 500 template
+Wagtail images had some nice features, but is tightly tied to Wagtail.
 
-### Base template and reusable components
-
-[ ] OpenGraph metadata component
-[ ] HRBlock (lol)
-[ ] BlockquoteBlock (with citation)
-[ ] CodeBlock
-[ ] RSS autodiscovery link
-
-### Category Page
-
-[x] Add intro (StreamField) to Category model
-[x] Add featured image to Category model
-[ ] RSS feed per category
-
-
-Do I even want a sidebar? If yes, what should I put in it?
-About the Author
-Author links
-Related Links
-Affiliate Book Link
+- django-responsive-images has resize-on-render tags and basic feature set using pillow.
+- django-daguerre has smart resizing with "areas", nice widgets, but uses a view to resize on DL.
+- Both of the above store everything in the DB, not just the FS. Not a deal-breaker.
+- sorl-thumbnail is the old-school, maintained by Jazzband, but lacking newer features.

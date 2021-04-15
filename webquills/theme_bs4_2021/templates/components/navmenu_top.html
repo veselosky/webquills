@@ -1,12 +1,12 @@
-{% load wagtailcore_tags navigation_tags %}{% wagtail_site as site %}
-{% with menupages=site.root_page.get_children.live.in_menu %}
+{% load static i18n %}
+{% with menupages=topmenu %}
 <div class="nav-scroller py-1 mb-2">{# Horizontal navigation menu #}
   <nav class="nav d-flex nav-pills nav-justified">
-    <a class="nav-item nav-link p-2{% if page.get_url == site.root_page.get_url %} active{% endif %}"
-    href="{% pageurl site.root_page %}">Home</a>
+    <a class="nav-item nav-link p-2{% if page.get_absolute_url == "/" %} active{% endif %}"
+    href="{% url "home" %}">Home</a>
   {% for menupage in menupages %}
-    <a class="nav-item nav-link p-2{{ menupage|active_if_ancestor_of:page }}"
-    href="{% pageurl menupage %}">{{ menupage.title }}</a>
+    <a class="nav-item nav-link p-2{% if TODO.calc_active %} active{% endif %}"
+    href="{{ menupage.get_absolute_url }}">{{ menupage.headline }}</a>
   {% empty %}
   {% endfor %}
   </nav>

@@ -19,6 +19,8 @@ function bootstrap {
 }
 
 function evolve {
+    $PYTHON $BASE_DIR/manage.py migrate webquills zero
+    rm $BASE_DIR/webquills/core/migrations/000*.py
     $PYTHON $BASE_DIR/manage.py makemigrations
     migrate
 }

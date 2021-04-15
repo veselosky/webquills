@@ -23,6 +23,16 @@ DOTENV = BASE_DIR / ".env"
 if DOTENV.exists() and not env("IGNORE_ENV_FILE", default=False):
     environ.Env.read_env(DOTENV.open())
 
+# Internationalization
+# https://docs.djangoproject.com/en/3.2/topics/i18n/
+LANGUAGE_CODE = "en-US"
+TIME_ZONE = "America/New_York"
+USE_I18N = True
+USE_L10N = True
+USE_TZ = True
+
+SITE_ID = 1
+
 #######################################################################
 # Integrations/Resources: settings likely to vary between environments
 #######################################################################
@@ -54,48 +64,27 @@ MEDIA_ROOT = BASE_DIR / "var" / "media"
 if not MEDIA_ROOT.exists():
     MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 # ManifestStaticFilesStorage is recommended in production, to prevent outdated
-# Javascript / CSS assets being served from cache (e.g. after a Wagtail upgrade).
+# Javascript / CSS assets being served from cache.
 # See https://docs.djangoproject.com/en/3.1/ref/contrib/staticfiles/#manifeststaticfilesstorage
 STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
 
-#######################################################################
-# Wagtail settings
-#######################################################################
-WAGTAIL_SITE_NAME = env("WAGTAIL_SITE_NAME", default="WebQuills")
-
-# Base URL to use when referring to full URLs within the Wagtail admin backend -
-# e.g. in notification emails. Don't include '/admin' or a trailing slash
-BASE_URL = env("WAGTAIL_BASE_URL", default="http://localhost.webquills.com")
-WAGTAIL_ENABLE_UPDATE_CHECK = False
-TAGGIT_CASE_INSENSITIVE = True
-TAG_SPACES_ALLOWED = False
-# Set of features to make available in the draftail editor. We exclude
-# headings, images, blockquotes, and embeds because we provide blocks for these.
-WAGTAILADMIN_RICH_TEXT_EDITORS = {
-    "default": {
-        "WIDGET": "wagtail.admin.rich_text.DraftailRichTextArea",
-        "OPTIONS": {
-            "features": [
-                "bold",
-                "italic",
-                "link",
-                "document-link",
-                "ol",
-                "ul",
-                "code",
-                "superscript",
-                "subscript",
-                "strikethrough",
-            ]
-        },
-    },
-}
+# CELERY settings
+# If the environment has not provided settings, assume there is no broker
+# and run celery tasks in-process. This means you MUST provide
+# CELERY_TASK_ALWAYS_EAGER=False in your environment to actually use celery.
+CELERY_TASK_ALWAYS_EAGER = env("CELERY_TASK_ALWAYS_EAGER", default=True)
+CELERY_TASK_EAGER_PROPAGATES = env("CELERY_TASK_EAGER_PROPAGATES", default=True)
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/7")
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="")
+CELERY_TIME_ZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 #######################################################################
 # Application Composition: Fixed values regardless of environment.
 #######################################################################
 ROOT_URLCONF = "webquills.urls"
 WSGI_APPLICATION = "webquills.wsgi.application"
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 # The order of installed apps determines the search order for templates.
 # Template loader uses first template it finds, so in order to override
@@ -104,49 +93,34 @@ INSTALLED_APPS = [
     # Our apps
     "webquills.theme_bs4_2021",
     "webquills.core",
-    "webquills.search",
     # third party apps
     "bootstrap4",
-    # Wagtail extras
-    "wagtail.contrib.modeladmin",
-    "wagtail.contrib.settings",
-    "wagtailfontawesome",
-    # Stock wagtail
-    "wagtail.contrib.forms",
-    "wagtail.contrib.redirects",
-    "wagtail.embeds",
-    "wagtail.sites",
-    "wagtail.users",
-    "wagtail.snippets",
-    "wagtail.documents",
-    "wagtail.images",
-    "wagtail.search",
-    "wagtail.admin",
-    "wagtail.core",
-    "modelcluster",
+    "django_celery_beat",
     "taggit",
+    "tinymce",
     # core Django apps
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.messages",
     "django.contrib.sessions",
+    "django.contrib.sites",
     "django.contrib.staticfiles",
 ]
 
 MIDDLEWARE = [
     # Do security stuff in Apache, not Django.
-    # https://docs.djangoproject.com/en/3.1/ref/middleware/#django.middleware.security.SecurityMiddleware
+    # https://docs.djangoproject.com/en/3.2/ref/middleware/#django.middleware.security.SecurityMiddleware
     #    "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",  # required for auth
+    "django.middleware.common.CommonMiddleware",  # trailing /
     # "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "django.contrib.sites.middleware.CurrentSiteMiddleware",  # set request.site
     # Set this in Apache, not Django.
-    # https://docs.djangoproject.com/en/3.1/ref/clickjacking/
+    # https://docs.djangoproject.com/en/3.2/ref/clickjacking/
     # "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "wagtail.contrib.redirects.middleware.RedirectMiddleware",
 ]
 
 TEMPLATES = [
@@ -162,41 +136,55 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.media",
                 "django.template.context_processors.static",
-                "wagtail.contrib.settings.context_processors.settings",
             ]
         },
     }
 ]
 
-# Internationalization
-# https://docs.djangoproject.com/en/2.2/topics/i18n/
-LANGUAGE_CODE = "en-US"
-TIME_ZONE = "UTC"
-USE_I18N = True
-USE_L10N = True
-USE_TZ = True
+#######################################################################
+# Configure 3rd party modules we use.
+#######################################################################
+TAGGIT_CASE_INSENSITIVE = True
+TAG_SPACES_ALLOWED = False
 
+TINYMCE_DEFAULT_CONFIG = {
+    "height": "320px",
+    "width": "960px",
+    "menubar": "edit view insert format tools table help",
+    "plugins": "advlist autoresize charmap code codesample help hr image imagetools "
+    "link lists media paste searchreplace table toc visualblocks visualchars wordcount",
+    "toolbar": "undo redo | bold italic strikethrough | styleselect | removeformat | "
+    "numlist bullist indent outdent | image | code",
+    "image_advtab": True,
+    "image_caption": True,
+    "image_class_list": [
+        {"title": "Responsive", "value": "img-fluid"},
+        {"title": "Left", "value": "float-left"},
+        {"title": "Right", "value": "float-right"},
+    ],
+    "image_list": "/mce/recent_images.json",
+}
 
 #######################################################################
 # DEVELOPMENT: If running in a dev environment, loosen restrictions
 # and add debugging tools.
 #######################################################################
 if DEBUG:
-    INSTALLED_APPS.append("wagtail.contrib.styleguide")
     try:
-        import debug_toolbar  # pylint: disable=unused-import
+        import debug_toolbar
 
         INSTALLED_APPS.append("debug_toolbar")
         MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
         INTERNAL_IPS = [
             "127.0.0.1",
         ]
+        # See also urls.py for debug_toolbar urls
     except ImportError:
         # Dev tools are optional
         pass
 
     try:
-        import django_extensions  # pylint: disable=unused-import
+        import django_extensions
 
         INSTALLED_APPS.append("django_extensions")
     except ImportError:

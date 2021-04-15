@@ -1,6 +1,7 @@
+celery >= 5.0.5, < 5.1
 django-bootstrap4
+django-celery-beat >= 2.2.0, < 2.3
 django-environ
 django-redis
+django-tinymce
 pillow
-wagtail >=2.12, < 2.13
-wagtailfontawesome

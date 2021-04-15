@@ -1,9 +1,9 @@
 {% comment %}Set the `article_list` variable when including this component.{% endcomment %}
-{% load i18n wagtailcore_tags %}{% for article in article_list %}
+{% load i18n %}{% for article in article_list %}
 <article class="blog-post">
-  <h2 class="blog-post-title"><a href="{% pageurl article %}">{{ article.title }}</a></h2>
+  <h2 class="blog-post-title"><a href="{{ article.get_absolute_url}}">{{ article.headline }}</a></h2>
   <p class="blog-post-meta">{{ article.updated|date:"DATE_FORMAT"}} {{ article.attribution }}</p>
   {{ article.excerpt }}
-  <p><a href="{% pageurl article %}#continue-reading">{% trans "Continue reading" %}</a></p>
+  <p><a href="{{ article.get_absolute_url }}#continue-reading">{% trans "Continue reading" %}</a></p>
 </article><!-- /.blog-post -->
 {% endfor %}
