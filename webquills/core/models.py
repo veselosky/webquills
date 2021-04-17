@@ -97,7 +97,12 @@ class CallToAction(models.Model):
             "A unique name to be displayed in the admin (not visible to the public)"
         ),
     )
-
+    site = models.ForeignKey(
+        "sites.Site",
+        on_delete=models.PROTECT,
+        verbose_name=_("site"),
+        related_name="ctas",
+    )
     headline = models.CharField(_("headline"), max_length=255, blank=False, null=False)
     lead = HTMLField(
         verbose_name=_("lead paragraph"),
@@ -172,6 +177,12 @@ class AbstractPage(models.Model):
     objects = PageManager()
 
     # Common fields for all pages
+    site = models.ForeignKey(
+        "sites.Site",
+        on_delete=models.PROTECT,
+        verbose_name=_("site"),
+        related_name="%(class)ss",
+    )
     seo_title = models.CharField(_("page title"), max_length=255, blank=True)
     seo_description = models.CharField(_("description"), max_length=255, blank=True)
     headline = models.CharField(_("headline"), max_length=255)

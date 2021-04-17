@@ -37,6 +37,7 @@ def initialize_site():
     except HomePage.DoesNotExist:
         hp = HomePage.objects.create(
             headline=site.name,
+            site=site,
             slug="default-home-page",
             status=Status.USABLE,
         )
