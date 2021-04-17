@@ -8,7 +8,7 @@ from webquills.core.models import ArticlePage, CategoryPage, HomePage, Image
 def homepage(request):
     # The most recently published live home page. This allows you to schedule a new
     # home page without disturbing the existing one.
-    page = HomePage.objects.live().latest()
+    page = HomePage.objects.live().filter(site=request.site).latest()
     template = page.get_template()
 
     # The home page wants a list of featured articles, and a list of recent articles.
@@ -28,7 +28,9 @@ def homepage(request):
 
 
 def category(request, category_slug):
-    page = get_object_or_404(CategoryPage.objects.live(), slug=category_slug)
+    page = get_object_or_404(
+        CategoryPage.objects.live(), site=request.site, slug=category_slug
+    )
     template = page.get_template()
 
     # The category page wants a list of featured articles, and a list of recent articles.
@@ -50,7 +52,10 @@ def category(request, category_slug):
 
 def article(request, category_slug, article_slug):
     page = get_object_or_404(
-        ArticlePage.objects.live(), slug=article_slug, category__slug=category_slug
+        ArticlePage.objects.live(),
+        site=request.site,
+        slug=article_slug,
+        category__slug=category_slug,
     )
     template = page.get_template()
     context = {

@@ -154,6 +154,15 @@ class Image(models.Model):
         width_field="width",
         height_field="height",
     )
+    site = models.ForeignKey(
+        "sites.Site",
+        on_delete=models.PROTECT,
+        verbose_name=_("site"),
+        help_text=_(
+            "Note: images are associated with a site, but are physically "
+            "shared among all sites. "
+        ),
+    )
     width = models.IntegerField(verbose_name=_("width"), editable=False)
     height = models.IntegerField(verbose_name=_("height"), editable=False)
     alt_text = models.CharField(_("alt text"), blank=True, max_length=255)
