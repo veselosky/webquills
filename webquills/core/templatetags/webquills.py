@@ -1,6 +1,6 @@
 from django import template
 
-from webquills.core.images import Image
+from webquills.core.models import Image
 
 
 # https://docs.djangoproject.com/en/3.2/howto/custom-template-tags/

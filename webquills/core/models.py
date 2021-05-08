@@ -1,4 +1,6 @@
+from contextlib import contextmanager
 from pathlib import Path
+import os
 
 from django.conf import settings
 from django.db import models
@@ -8,12 +10,15 @@ from django.utils.translation import gettext_lazy as _
 from tinymce.models import HTMLField
 from taggit.managers import TaggableManager
 
-from .images import Image
+from .images import img_upload_to, fillcrop_image, resize_image, Thumb
 
 
 ###############################################################################
 # Ancillary models used by pages or exposed in CMS
 ###############################################################################
+ALL_RIGHTS_RESERVED = _("All rights reserved")
+
+
 class CopyrightLicense(models.Model):
     class Meta:
         verbose_name = _("copyright license")
@@ -25,23 +30,217 @@ class CopyrightLicense(models.Model):
         max_length=50,
         help_text=_("A short name for use in the admin"),
     )
-    copyright_license_notice = HTMLField(
+    notice = HTMLField(
         _("copyright license notice"),
         default=_("All rights reserved."),
         help_text=_("Text to follow the copyright notice indicating any license"),
     )
-    copyright_license_url = models.CharField(
+    url = models.CharField(
         _("copyright license URL"),
         blank=True,
         null=True,
         max_length=255,
-        help_text=_("Link to the full copyright license"),
+        help_text=_(
+            "Link to the full copyright license. Leave blank if the notice contains "
+            "a link to the license. "
+        ),
     )
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class Author(models.Model):
+    """
+    Author is a container for attribution and copyright information, not necessarily
+    representing an actual person.
+    """
+
+    class Meta:
+        verbose_name = _("author")
+        verbose_name_plural = _("authors")
+
+    byline = models.CharField(
+        _("byline"),
+        max_length=255,
+        blank=True,
+        help_text=_(
+            "As in a newspaper byline, a name to attribute authorship of an article, "
+            "e.g. 'Edward R. Murrow' (omit the word 'by')."
+        ),
+    )
+    about = HTMLField(
+        verbose_name=_("about"),
+        blank=True,
+        help_text=_(
+            "A paragraph or two about the author. May include a headshot, links to "
+            "the author's website, recent publications, etc. Typically displayed in "
+            "article footer or sidebar. "
+        ),
+    )
+    copyright_holder = models.CharField(
+        _("copyright holder"),
+        max_length=255,
+        blank=True,
+        help_text=_(
+            "Name to use in copyright notice as owner, e.g. 'Galactic Media LLC'. If "
+            "the material is not subject to copyright, or you don't want a default "
+            "copyright notice printed, leave blank and explain in the copyright "
+            "notice field. "
+        ),
+    )
+    copyright_license = models.ForeignKey(
+        CopyrightLicense,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        help_text=_(
+            "Select a standard license to apply, or leave blank for "
+            "'All rights reserved'."
+        ),
+    )
+
+    def __str__(self) -> str:
+        return f"{self.byline} ({self.copyright_holder})"
+
+
+class Copyrightable(models.Model):
+    """
+    Copyrightable objects have an optional link to Author, a container for copyright
+    and attribution information. They also have custom fields to override the Author
+    information where necessary and add additional attributions or credits.
+    """
+
+    class Meta:
+        abstract = True
+
+    author = models.ForeignKey(
+        Author,
+        verbose_name=_("author"),
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
+    credits = HTMLField(
+        verbose_name=_("credits"),
+        blank=True,
+        help_text=_("Additional credits (typically displayed in footer or sidebar)"),
+    )
+    custom_byline = models.CharField(
+        _("byline"),
+        max_length=255,
+        blank=True,
+        help_text=_(
+            "As in a newspaper byline, a name to attribute authorship of an article, "
+            "e.g. 'Edward R. Murrow' (omit the word 'by')."
+        ),
+    )
+    custom_about = HTMLField(
+        verbose_name=_("about"),
+        blank=True,
+        help_text=_(
+            "A paragraph or two about the author. May include a headshot, links to "
+            "the author's website, recent publications, etc. Typically displayed in "
+            "article footer or sidebar. "
+        ),
+    )
+    custom_copyright_holder = models.CharField(
+        _("copyright holder"),
+        max_length=255,
+        blank=True,
+        help_text=_(
+            "Name to use in copyright notice as owner, e.g. 'Galactic Media LLC'. If "
+            "the material is not subject to copyright, or you don't want a default "
+            "copyright notice printed, leave blank and explain in the copyright "
+            "notice field. "
+        ),
+    )
+    custom_copyright_license = models.ForeignKey(
+        CopyrightLicense,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        help_text=_(
+            "Select a standard license to apply, or leave blank to use the site "
+            "default. "
+        ),
+    )
+    custom_copyright_notice = HTMLField(
+        verbose_name=_("copyright notice"),
+        blank=True,
+        help_text=_("A custom copyright notice to replace the default. "),
+    )
+
+    @property
+    def byline(self):
+        if self.custom_byline:
+            return self.custom_byline
+        if self.author and self.author.byline:
+            return self.author.byline
+        try:
+            return self.site.meta.author.byline
+        except AttributeError:
+            pass
+        return ""
+
+    @property
+    def about(self):
+        if self.custom_about:
+            return self.custom_about
+        if self.author and self.author.about:
+            return self.author.about
+        try:
+            return self.site.meta.author.about
+        except AttributeError:
+            pass
+        return ""
+
+    @property
+    def copyright_holder(self):
+        if self.custom_copyright_holder:
+            return self.custom_copyright_holder
+        if self.author and self.author.copyright_holder:
+            return self.author.copyright_holder
+        try:
+            return self.site.meta.author.copyright_holder
+        except AttributeError:
+            pass
+        return ""
+
+    @property
+    def copyright_license(self):
+        if self.custom_copyright_license:
+            return self.custom_copyright_license
+        if self.author and self.author.copyright_license:
+            return self.author.copyright_license
+        try:
+            return self.site.meta.author.copyright_license
+        except AttributeError:
+            pass
+        return None
+
+    @property
+    def copyright_notice(self):
+        if self.custom_copyright_notice:
+            return self.custom_copyright_notice
+        tpl = _("© Copyright %(year)s %(owner)s ")
+        notice = tpl % {"year": self.copyright_year, "owner": self.copyright_holder}
+        if self.copyright_license:
+            notice += self.copyright_license.notice
+        else:
+            notice += ALL_RIGHTS_RESERVED
+        return notice
+
+    @property
+    def copyright_year(self):
+        "Subclasses should implement their own copyright year"
+        return timezone.now().year
 
 
 class SiteMetaManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().select_related("copyright_license")
+        return super().get_queryset().select_related("author", "site")
 
 
 class SiteMeta(models.Model):
@@ -60,22 +259,181 @@ class SiteMeta(models.Model):
         null=True,
         help_text=_("Subtitle. A few words letting visitors know what to expect."),
     )
-    copyright_holder = models.CharField(
-        _("copyright holder"),
-        max_length=255,
-        default="WebQuills",
-        help_text=_("Owner of the copyright (in footer notice)"),
-    )
-    copyright_license = models.ForeignKey(
-        CopyrightLicense,
+    author = models.ForeignKey(
+        Author,
+        verbose_name=_("author"),
         on_delete=models.SET_NULL,
-        verbose_name=_("copyright license"),
         blank=True,
         null=True,
+        help_text=_("Default author for any page without an explicit author"),
     )
     objects = SiteMetaManager()
 
+    def __str__(self) -> str:
+        return self.name
 
+
+###############################################################################
+# The Image model
+###############################################################################
+class Image(Copyrightable, models.Model):
+    class Meta:
+        verbose_name = _("image")
+        verbose_name_plural = _("images")
+        ordering = ["-created_at"]
+        get_latest_by = "created_at"
+
+    name = models.CharField(max_length=255, verbose_name=_("name"))
+    file = models.ImageField(
+        verbose_name=_("file"),
+        upload_to=img_upload_to,
+        width_field="width",
+        height_field="height",
+    )
+    site = models.ForeignKey(
+        "sites.Site",
+        on_delete=models.PROTECT,
+        verbose_name=_("site"),
+        help_text=_(
+            "Note: images are associated with a site, but are physically "
+            "shared among all sites. "
+        ),
+    )
+    width = models.IntegerField(verbose_name=_("width"), editable=False)
+    height = models.IntegerField(verbose_name=_("height"), editable=False)
+    alt_text = models.CharField(_("alt text"), blank=True, max_length=255)
+    created_at = models.DateTimeField(
+        verbose_name=_("created at"), auto_now_add=True, db_index=True
+    )
+    copyright_year = models.DateField(
+        verbose_name=_("copyright year"), blank=True, null=True
+    )
+    uploaded_by_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name=_("uploaded by user"),
+        null=True,
+        blank=True,
+        editable=False,
+        on_delete=models.SET_NULL,
+    )
+
+    tags = TaggableManager(help_text=None, blank=True, verbose_name=_("tags"))
+
+    focal_point_x = models.PositiveIntegerField(null=True, blank=True)
+    focal_point_y = models.PositiveIntegerField(null=True, blank=True)
+    focal_point_width = models.PositiveIntegerField(null=True, blank=True)
+    focal_point_height = models.PositiveIntegerField(null=True, blank=True)
+
+    file_size = models.PositiveIntegerField(null=True, editable=False)
+    thumbs = models.JSONField(
+        _("thumbnails"),
+        default=list,  # New list each time, not shared among all instances!
+        blank=True,
+        help_text=_("Resized versions of the image that have been generated"),
+    )
+
+    def save(self, *args, **kwargs) -> None:
+        """
+        Overridden to keep some fields up to date with the underlying file. Note that
+        Django itself populates the width and height fields.
+
+        See also post_save signals wired in apps.py for thumbnail generation.
+        """
+        self.file_size = self.file.size
+        return super().save(*args, **kwargs)
+
+    # params after op MUST be passed as kwargs
+    def get_thumb(self, op: str, **kwargs) -> Thumb:
+        """
+        Given `op` (operation) and `kwargs`, return the path (relative to MEDIA_ROOT) of
+        an image file that has been transformed with the given op and kwargs.
+        """
+        found = list(
+            filter(lambda x: x["op"] == op and x["kwargs"] == kwargs, self.thumbs)
+        )
+        if found:  # just return, don't check if it exists
+            return Thumb(**found[0])
+
+        # Currently only support 2 ops, make a registry if you want to add more
+        if op == "resize":
+            newpath = resize_image(self, **kwargs)
+        elif op == "fillcrop":
+            newpath = fillcrop_image(self, **kwargs)
+        else:
+            raise ValueError(f"Invalid image op: {op}")
+        # Cache the generated thumb's path for future use
+        thumb = {"op": op, "kwargs": kwargs, "path": newpath}
+        self.thumbs.append(thumb)
+        self.save(update_fields=["thumbs"])
+
+        return Thumb(**thumb)
+
+    def is_stored_locally(self):
+        """
+        Returns True if the image is hosted on the local filesystem
+        """
+        try:
+            self.file.path
+
+            return True
+        except NotImplementedError:
+            return False
+
+    @property
+    def is_portrait(self):
+        return self.width < self.height
+
+    @property
+    def is_landscape(self):
+        return self.height < self.width
+
+    @property
+    def aspect_ratio(self):
+        return self.width / self.height
+
+    @property
+    def basename(self):
+        return os.path.basename(self.file.name)
+
+    @property
+    def original(self):
+        "Return URL of the original image as uploaded."
+        return self.file.url
+
+    def __str__(self) -> str:
+        return self.name
+
+    @contextmanager
+    def open_file(self):
+        # Open file if it is closed
+        close_file = False
+        image_file = self.file
+
+        if self.file.closed:
+            # Reopen the file
+            if self.is_stored_locally():
+                self.file.open("rb")
+            else:
+                # Some external storage backends don't allow reopening
+                # the file. Get a fresh file instance. #1397
+                storage = self._meta.get_field("file").storage
+                image_file = storage.open(self.file.name, "rb")
+
+            close_file = True
+
+        # Seek to beginning
+        image_file.seek(0)
+
+        try:
+            yield image_file
+        finally:
+            if close_file:
+                image_file.close()
+
+
+###############################################################################
+# Core Page types
+###############################################################################
 def get_cta_template_path():
     # TODO Template should be in theme. Move after defining theme architecture.
     theme_path = settings.BASE_DIR / "webquills" / "core" / "templates"
@@ -158,9 +516,6 @@ class Status(models.TextChoices):
     CANCELLED = "cancelled", _("Unpublish (cancelled)")
 
 
-###############################################################################
-# Core Page types
-###############################################################################
 class PageManager(models.Manager):
     def live(self):
         return self.filter(
@@ -170,7 +525,7 @@ class PageManager(models.Manager):
         )
 
 
-class AbstractPage(models.Model):
+class AbstractPage(Copyrightable, models.Model):
     class Meta:
         abstract = True
 
@@ -221,6 +576,10 @@ class AbstractPage(models.Model):
         ),
     )
     tags = TaggableManager(blank=True)
+
+    @property
+    def copyright_year(self):
+        return self.published.year
 
     @property
     def title(self):
@@ -317,11 +676,6 @@ class ArticlePage(AbstractPage):
     objects = ArticleManager()
 
     # Additional properties and methods
-    @property
-    def attribution(self):
-        "Article byline. Someday this will do something meaningful."
-        return "by Vince Veselosky"
-
     @property
     def excerpt(self):
         "Rich text excerpt for use in teases and feed content."

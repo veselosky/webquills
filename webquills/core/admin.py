@@ -8,6 +8,7 @@ class PageAdmin(admin.ModelAdmin):
 
 
 # Bare minimum, below customize as needed
+admin.site.register(models.Author)
 admin.site.register(models.ArticlePage, PageAdmin)
 admin.site.register(models.CallToAction)
 admin.site.register(models.CategoryPage, PageAdmin)

@@ -1,4 +1,3 @@
-from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 import os
@@ -7,16 +6,14 @@ import tempfile
 from django.apps import apps
 from django.conf import settings
 from django.core.files.images import ImageFile
-from django.db import models
 from django.utils.translation import gettext_lazy as _
 import PIL as pillow
-from taggit.managers import TaggableManager
 
 
 ###############################################################################
 # Image model and related stuff
 ###############################################################################
-def get_upload_to(instance, filename):
+def img_upload_to(instance, filename):
     """
     Calculate the upload destination for an image file.
     """
@@ -138,155 +135,3 @@ class Thumb:
     @property
     def url(self) -> str:
         return settings.MEDIA_URL + self.path
-
-
-class Image(models.Model):
-    class Meta:
-        verbose_name = _("image")
-        verbose_name_plural = _("images")
-        ordering = ["-created_at"]
-        get_latest_by = "created_at"
-
-    name = models.CharField(max_length=255, verbose_name=_("name"))
-    file = models.ImageField(
-        verbose_name=_("file"),
-        upload_to=get_upload_to,
-        width_field="width",
-        height_field="height",
-    )
-    site = models.ForeignKey(
-        "sites.Site",
-        on_delete=models.PROTECT,
-        verbose_name=_("site"),
-        help_text=_(
-            "Note: images are associated with a site, but are physically "
-            "shared among all sites. "
-        ),
-    )
-    width = models.IntegerField(verbose_name=_("width"), editable=False)
-    height = models.IntegerField(verbose_name=_("height"), editable=False)
-    alt_text = models.CharField(_("alt text"), blank=True, max_length=255)
-    created_at = models.DateTimeField(
-        verbose_name=_("created at"), auto_now_add=True, db_index=True
-    )
-    uploaded_by_user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        verbose_name=_("uploaded by user"),
-        null=True,
-        blank=True,
-        editable=False,
-        on_delete=models.SET_NULL,
-    )
-
-    tags = TaggableManager(help_text=None, blank=True, verbose_name=_("tags"))
-
-    focal_point_x = models.PositiveIntegerField(null=True, blank=True)
-    focal_point_y = models.PositiveIntegerField(null=True, blank=True)
-    focal_point_width = models.PositiveIntegerField(null=True, blank=True)
-    focal_point_height = models.PositiveIntegerField(null=True, blank=True)
-
-    file_size = models.PositiveIntegerField(null=True, editable=False)
-    thumbs = models.JSONField(
-        _("thumbnails"),
-        default=list,  # New list each time, not shared among all instances!
-        blank=True,
-        help_text=_("Resized versions of the image that have been generated"),
-    )
-
-    def save(self, *args, **kwargs) -> None:
-        """
-        Overridden to keep some fields up to date with the underlying file. Note that
-        Django itself populates the width and height fields.
-
-        See also post_save signals wired in apps.py for thumbnail generation.
-        """
-        self.file_size = self.file.size
-        return super().save(*args, **kwargs)
-
-    # params after op MUST be passed as kwargs
-    def get_thumb(self, op: str, **kwargs) -> Thumb:
-        """
-        Given `op` (operation) and `kwargs`, return the path (relative to MEDIA_ROOT) of
-        an image file that has been transformed with the given op and kwargs.
-        """
-        found = list(
-            filter(lambda x: x["op"] == op and x["kwargs"] == kwargs, self.thumbs)
-        )
-        if found:  # just return, don't check if it exists
-            return Thumb(**found[0])
-
-        # Currently only support 2 ops, make a registry if you want to add more
-        if op == "resize":
-            newpath = resize_image(self, **kwargs)
-        elif op == "fillcrop":
-            newpath = fillcrop_image(self, **kwargs)
-        else:
-            raise ValueError(f"Invalid image op: {op}")
-        # Cache the generated thumb's path for future use
-        thumb = {"op": op, "kwargs": kwargs, "path": newpath}
-        self.thumbs.append(thumb)
-        self.save(update_fields=["thumbs"])
-
-        return Thumb(**thumb)
-
-    def is_stored_locally(self):
-        """
-        Returns True if the image is hosted on the local filesystem
-        """
-        try:
-            self.file.path
-
-            return True
-        except NotImplementedError:
-            return False
-
-    @property
-    def is_portrait(self):
-        return self.width < self.height
-
-    @property
-    def is_landscape(self):
-        return self.height < self.width
-
-    @property
-    def aspect_ratio(self):
-        return self.width / self.height
-
-    @property
-    def basename(self):
-        return os.path.basename(self.file.name)
-
-    @property
-    def original(self):
-        "Return URL of the original image as uploaded."
-        return self.file.url
-
-    def __str__(self) -> str:
-        return self.name
-
-    @contextmanager
-    def open_file(self):
-        # Open file if it is closed
-        close_file = False
-        image_file = self.file
-
-        if self.file.closed:
-            # Reopen the file
-            if self.is_stored_locally():
-                self.file.open("rb")
-            else:
-                # Some external storage backends don't allow reopening
-                # the file. Get a fresh file instance. #1397
-                storage = self._meta.get_field("file").storage
-                image_file = storage.open(self.file.name, "rb")
-
-            close_file = True
-
-        # Seek to beginning
-        image_file.seek(0)
-
-        try:
-            yield image_file
-        finally:
-            if close_file:
-                image_file.close()
