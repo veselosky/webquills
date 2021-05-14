@@ -2,14 +2,21 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
+from django.contrib.sites.models import Site
 from django.core.files.images import ImageFile
 from django.test import TestCase
 import PIL as pillow
 
-from webquills.core.images import Image, Thumb, resize_image, fillcrop_image
+from webquills.core.images import Thumb, resize_image, fillcrop_image
+from webquills.core.models import Image
 
 
 class TestImageModel(TestCase):
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.site = Site.objects.get_current()
+        return super().setUpTestData()
+
     def test_image_autofields(self):
         "Image.file_size should be auto-populated on save"
         here = Path(__file__).parent
@@ -18,25 +25,25 @@ class TestImageModel(TestCase):
         media_root = TemporaryDirectory()
         with self.settings(MEDIA_ROOT=media_root.name):
             with image_file.open("rb") as im:
-                img = Image(file=ImageFile(im), name=image_file.name)
+                img = Image(file=ImageFile(im), name=image_file.name, site=self.site)
                 img.save()
 
                 assert img.file_size == img.file.size
 
-    @patch("webquills.core.images.resize_image")
+    @patch("webquills.core.models.resize_image")
     def test_get_thumb(self, resizer):
         width = 600
         height = 400
-        name = "test_image.jpg"
-        resizer.return_value = f"img-r-{width}-{height}/{name}"
+        name = "cathryn-lavery-fMD_Cru6OTk-unsplash.jpg"
+        resizer.return_value = f"img-resize-{width}x{height}/{name}"
 
         here = Path(__file__).parent
-        image_file = here / "cathryn-lavery-fMD_Cru6OTk-unsplash.jpg"
+        image_file = here / name
         # Create a temp dir to act as our MEDIA_ROOT during testing
         media_root = TemporaryDirectory()
         with self.settings(MEDIA_ROOT=media_root.name):
             with image_file.open("rb") as im:
-                img = Image(file=ImageFile(im), name=name)
+                img = Image(file=ImageFile(im), name=name, site=self.site)
                 img.save()
 
                 resp = img.get_thumb("resize", width=width, height=height)
@@ -65,7 +72,7 @@ class TestImageModel(TestCase):
         media_root = TemporaryDirectory()
         with self.settings(MEDIA_ROOT=media_root.name):
             with image_file.open("rb") as im:
-                img = Image(file=ImageFile(im), name=name)
+                img = Image(file=ImageFile(im), name=name, site=self.site)
                 img.save()
 
                 # TEST BEGINS
@@ -88,7 +95,7 @@ class TestImageModel(TestCase):
         media_root = TemporaryDirectory()
         with self.settings(MEDIA_ROOT=media_root.name):
             with image_file.open("rb") as im:
-                img = Image(file=ImageFile(im), name=name)
+                img = Image(file=ImageFile(im), name=name, site=self.site)
                 img.save()
 
                 # TEST BEGINS
@@ -111,7 +118,7 @@ class TestImageModel(TestCase):
         media_root = TemporaryDirectory()
         with self.settings(MEDIA_ROOT=media_root.name):
             with image_file.open("rb") as im:
-                img = Image(file=ImageFile(im), name=name)
+                img = Image(file=ImageFile(im), name=name, site=self.site)
                 img.save()
 
                 # TEST BEGINS
