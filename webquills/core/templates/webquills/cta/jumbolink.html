@@ -6,7 +6,9 @@
     <div class="lead my-3">{{ cta.lead|safe }}</div>
     <p class="lead mb-0"><a href="{{cta.link}}" class="text-white font-weight-bold">{{cta.action_label}}</a></p>
   </div>
+  {% if cta.picture %}
   <div class="col-md-6 px-0 cta-jumbolink-extra"><a href="{{cta.link}}"><img class="right"
   src="{% image_url cta.picture "resize" width=600 height=450 %}" /></a></div>
+  {% endif %}
 </div>
 {% endif %}

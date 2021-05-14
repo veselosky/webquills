@@ -18,8 +18,20 @@ def homepage(request):
         tags__name__in=["hpfeatured"]
     )[:4]
 
+    # If a call to action module is defined, set up the data structure
+    cta = None
+    if page.target_url:
+        cta = {
+            "headline": page.headline,
+            "lead": page.lead,
+            "action_label": page.action_label,
+            "link": page.target_url,
+            "picture": page.picture,
+        }
+
     context = {
         "page": page,
+        "cta": cta,
         "featured_articles": featured_articles,
         "recent_articles": recent_articles,
         "topmenu": CategoryPage.objects.live(),
