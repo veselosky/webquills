@@ -5,7 +5,7 @@
     <a class="nav-item nav-link p-2{% if page.get_absolute_url == "/" %} active{% endif %}"
     href="{% url "home" %}">Home</a>
   {% for menupage in menupages %}
-    <a class="nav-item nav-link p-2{% if TODO.calc_active %} active{% endif %}"
+    <a class="nav-item nav-link p-2{% if menupage.get_absolute_url == request.path %} active{% endif %}"
     href="{{ menupage.get_absolute_url }}">{{ menupage.headline }}</a>
   {% empty %}
   {% endfor %}
