@@ -305,7 +305,7 @@ class Image(Copyrightable, models.Model):
     created_at = models.DateTimeField(
         verbose_name=_("created at"), auto_now_add=True, db_index=True
     )
-    copyright_year = models.DateField(
+    copyright_date = models.DateField(
         verbose_name=_("copyright year"), blank=True, null=True
     )
     uploaded_by_user = models.ForeignKey(
@@ -396,6 +396,10 @@ class Image(Copyrightable, models.Model):
         return os.path.basename(self.file.name)
 
     @property
+    def copyright_year(self):
+        return self.copyright_date.year
+
+    @property
     def original(self):
         "Return URL of the original image as uploaded."
         return self.file.url
@@ -434,82 +438,6 @@ class Image(Copyrightable, models.Model):
 ###############################################################################
 # Core Page types
 ###############################################################################
-def get_cta_template_path():
-    # TODO Template should be in theme. Move after defining theme architecture.
-    theme_path = settings.BASE_DIR / "webquills" / "core" / "templates"
-    cta_path = theme_path / "webquills" / "cta"
-    return cta_path
-
-
-class CallToAction(models.Model):
-    "A home page module calling visitor to take an important action"
-
-    class Meta:
-        verbose_name_plural = _("calls to action")
-
-    admin_name = models.CharField(
-        _("admin name"),
-        max_length=255,
-        unique=True,
-        help_text=_(
-            "A unique name to be displayed in the admin (not visible to the public)"
-        ),
-    )
-    site = models.ForeignKey(
-        "sites.Site",
-        on_delete=models.PROTECT,
-        verbose_name=_("site"),
-        related_name="ctas",
-    )
-    headline = models.CharField(_("headline"), max_length=255, blank=False, null=False)
-    lead = HTMLField(
-        verbose_name=_("lead paragraph"),
-        blank=True,
-        help_text=_("Paragraph leading reader to the action."),
-    )
-    picture = models.ForeignKey(
-        Image,
-        verbose_name=_("picture"),
-        blank=True,
-        null=True,
-        on_delete=models.SET_NULL,
-    )
-    action_label = models.CharField(
-        _("action label"),
-        max_length=50,
-        blank=False,
-        help_text=_("The label on the action button or link"),
-    )
-    target_url = models.URLField(
-        _("target URL"),
-        blank=True,
-        null=True,
-        help_text=_(
-            "CTA will either link/submit to a landing page on site, or to an external "
-            "target URL. Choose only one."
-        ),
-    )
-    custom_template = models.FilePathField(
-        verbose_name=_("custom template"),
-        path=get_cta_template_path,
-        max_length="255",
-        default=str(get_cta_template_path() / "jumbolink.html"),
-        help_text=_("Template used to render the CTA"),
-    )
-
-    def __str__(self) -> str:
-        return self.admin_name
-
-    @property
-    def template(self):
-        theme_path = settings.BASE_DIR / "webquills" / "core" / "templates"
-        return str(Path(self.custom_template).relative_to(theme_path))
-
-    @property
-    def link(self):
-        return self.target_url or self.landing_page.get_url()
-
-
 class Status(models.TextChoices):
     WITHHELD = "withheld", _("Draft (withheld)")
     USABLE = "usable", _("Publish (usable)")
@@ -542,6 +470,14 @@ class AbstractPage(Copyrightable, models.Model):
     seo_description = models.CharField(_("description"), max_length=255, blank=True)
     headline = models.CharField(_("headline"), max_length=255)
     slug = models.SlugField(_("slug"))
+    featured_image = models.ForeignKey(
+        Image,
+        verbose_name=_("featured image"),
+        related_name="+",  # images don't point back
+        blank=True,
+        null=True,
+        on_delete=models.SET_NULL,
+    )
 
     status = models.CharField(
         _("status"),
@@ -602,12 +538,33 @@ class HomePage(AbstractPage):
         ordering = ["-published"]
         get_latest_by = "published"
 
-    cta = models.ForeignKey(
-        CallToAction,
-        verbose_name=_("call to action"),
+    lead = HTMLField(
+        verbose_name=_("lead paragraph"),
+        blank=True,
+        help_text=_("Paragraph leading reader to the action."),
+    )
+    picture = models.ForeignKey(
+        Image,
+        verbose_name=_("picture"),
+        related_name="+",  # images don't point back
         blank=True,
         null=True,
         on_delete=models.SET_NULL,
+    )
+    action_label = models.CharField(
+        _("action label"),
+        max_length=50,
+        default=_("Learn more"),
+        help_text=_("The label on the action button or link"),
+    )
+    target_url = models.URLField(
+        _("target URL"),
+        blank=True,
+        null=True,
+        help_text=_(
+            "CTA will either link/submit to a landing page on site, or to an external "
+            "target URL. Choose only one."
+        ),
     )
 
     def get_absolute_url(self):
@@ -629,13 +586,6 @@ class CategoryPage(AbstractPage):
     intro = HTMLField(
         verbose_name=_("intro"),
         blank=True,
-    )
-    featured_image = models.ForeignKey(
-        Image,
-        verbose_name=_("featured image"),
-        blank=True,
-        null=True,
-        on_delete=models.SET_NULL,
     )
 
     def get_absolute_url(self):
@@ -665,13 +615,6 @@ class ArticlePage(AbstractPage):
         verbose_name=_("article body"),
         blank=True,
         help_text=_("Article text, excluding the headline (provided by 'title'). "),
-    )
-    featured_image = models.ForeignKey(
-        Image,
-        verbose_name=_("featured image"),
-        blank=True,
-        null=True,
-        on_delete=models.SET_NULL,
     )
     objects = ArticleManager()
 

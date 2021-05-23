@@ -6,7 +6,7 @@
 <div class="container">
 {% include "components/masthead.html" %}
 {% include "components/navmenu_top.html" %}
-{% if page.cta %}{% include page.cta.template with cta=page.cta %}{% endif %}
+{% if cta %}{% include "webquills/cta/jumbolink.html" %}{% endif %}
 {% include "components/featured_block.html" %}
 </div>
 {% endblock header %}
