@@ -151,10 +151,12 @@ TINYMCE_DEFAULT_CONFIG = {
     "height": "320px",
     "width": "960px",
     "menubar": "edit view insert format tools table help",
+    "pagebreak_separator": "<!-- pagebreak --><span id=continue-reading></span>",
     "plugins": "advlist autoresize charmap code codesample help hr image imagetools "
-    "link lists media paste searchreplace table toc visualblocks visualchars wordcount",
+    "link lists media pagebreak paste searchreplace table toc visualblocks "
+    "visualchars wordcount",
     "toolbar": "undo redo | bold italic strikethrough | styleselect | removeformat | "
-    "numlist bullist indent outdent | image | code",
+    "numlist bullist indent outdent | image pagebreak | code",
     "image_advtab": True,
     "image_caption": True,
     "image_class_list": [
@@ -170,6 +172,9 @@ TINYMCE_DEFAULT_CONFIG = {
 # and add debugging tools.
 #######################################################################
 if DEBUG:
+    ALLOWED_HOSTS = ["*"]
+    # Use the basic storage with no manifest
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
     try:
         import debug_toolbar
 
@@ -190,5 +195,3 @@ if DEBUG:
     except ImportError:
         # Dev tools are optional
         pass
-
-    ALLOWED_HOSTS = ["*"]

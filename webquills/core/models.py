@@ -621,9 +621,14 @@ class ArticlePage(AbstractPage):
     # Additional properties and methods
     @property
     def excerpt(self):
-        "Rich text excerpt for use in teases and feed content."
-        # TODO Implement rich excerpt from article body
-        return self.seo_description
+        """Rich text excerpt for use in teases and feed content. If no excerpt has
+        been specified, returns the full body text."""
+        if not self.body:
+            return ""
+        excerpt, _ = self.body.split(
+            settings.TINYMCE_DEFAULT_CONFIG["pagebreak_separator"], maxsplit=1
+        )
+        return excerpt
 
     def get_absolute_url(self):
         return reverse(
