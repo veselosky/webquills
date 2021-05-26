@@ -1,4 +1,3 @@
-
 {% extends 'base.html' %}{% load i18n static bootstrap4 %}
 {% block extra_css %}
 {% endblock extra_css %}
@@ -15,11 +14,15 @@
   <div class="row">
     <div class="col-md-8 blog-main">
       <h2 class="pb-3 mb-4 font-italic border-bottom">{% trans "Recent Articles" %}</h2>
-      {% include "components/article_list.html" with article_list=recent_articles %}
-
-      <nav class="blog-pagination">
-        <a class="btn btn-outline-primary" href="#">{% trans "Older" %}</a>
-        <a class="btn btn-outline-secondary disabled" href="#">{% trans "Newer" %}</a>
+      {% for article in recent_articles %}
+        {% include "components/article_preview.html" %}
+      {% endfor %}
+      <nav class="blog-pagination">{% if pg.has_next %}
+        <a class="btn btn-outline-primary" href="{% url "archive" pg.next_page_number %}">{% trans "Older" %}</a>
+        {% endif %}{% if pg.has_previous %}
+        <a class="btn btn-outline-primary" {% if pg.previous_page_number == 1 %}
+        href="{% url "home" %}" {% else %} href="{% url "archive" pg.previous_page_number %}" {% endif %}
+        >{% trans "Newer" %}</a>{% endif %}
       </nav>
 
     </div><!-- /.blog-main -->

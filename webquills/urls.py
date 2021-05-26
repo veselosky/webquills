@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.urls import include, path
 from django.contrib import admin
+from django.views.generic.base import RedirectView as Redirect
 
 from webquills.core import views
 
@@ -9,8 +10,18 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("mce/recent_images.json", views.tiny_image_list, name="mce-recent-images"),
     path("", views.homepage, name="home"),
+    # For SEO, redirect page 1 to index
+    path("archive/", Redirect.as_view(url="/", permanent=True)),
+    path("archive/1/", Redirect.as_view(url="/", permanent=True)),
+    path("archive/<int:pagenum>/", views.archive, name="archive"),
     # These patterns are very generic, so keep last in list
     path("<category_slug>/", views.category, name="category"),
+    # For SEO, redirect page 1 to index
+    path(
+        "<category_slug>/1/",
+        Redirect.as_view(url="/%(category_slug)s/", permanent=True),
+    ),
+    path("<category_slug>/<int:pagenum>/", views.category, name="category_archive"),
     path("<category_slug>/<article_slug>/", views.article, name="article"),
 ]
 

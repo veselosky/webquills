@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% load static bootstrap4 webquills %}
+{% extends 'base.html' %}{% load static bootstrap4 i18n webquills %}
 {% block header %}{# Nav menus, top utils, and content showcase #}
 <div class="container">
 {% include "components/masthead.html" %}
@@ -13,20 +13,23 @@
   {% endif %}
   </div>
 </div>
-{% include "components/featured_block.html" %}
+{% if pg.number == 1 %}{% include "components/featured_block.html" %}{% endif %}
 </div>
 {% endblock header %}
 {% block content %}
 <main role="main" class="container">
   <div class="row">
     <div class="col-md-8 blog-main">
-      <h2 class="pb-3 mb-4 font-italic border-bottom">Recent Articles</h2>
-      {% include "components/article_list.html" with article_list=recent_articles %}
-
-      <nav class="blog-pagination">
-        <a class="btn btn-outline-primary" href="#">Older</a>
-        <a class="btn btn-outline-secondary disabled" href="#">Newer</a>
-      </nav>
+      <h2 class="pb-3 mb-4 font-italic border-bottom">{% trans "Recent Articles" %}</h2>
+      {% for article in recent_articles %}
+        {% include "components/article_preview.html" %}
+      {% endfor %}
+      <nav class="blog-pagination">{% if pg.has_next %}
+        <a class="btn btn-outline-primary" href="{% url "category_archive" page.slug pg.next_page_number %}">{% trans "Older" %}</a>
+        {% endif %}{% if pg.has_previous %}
+        <a class="btn btn-outline-primary" {% if pg.previous_page_number == 1 %}
+        href="{% url "category" page.slug %}" {% else %} href="{% url "category_archive" page.slug pg.previous_page_number %}" {% endif %}
+        >{% trans "Newer" %}</a>{% endif %}
 
     </div><!-- /.blog-main -->
 

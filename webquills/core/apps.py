@@ -18,3 +18,27 @@ class CoreConfig(AppConfig):
 
     def get_image_media_dir(self):
         return "uploads"
+
+    @property
+    def pagelength(self):
+        if hasattr(settings, "WEBQUILLS_PAGELENGTH"):
+            return getattr(settings, "WEBQUILLS_PAGELENGTH")
+        return 25
+
+    @property
+    def homepage_featured_tag(self):
+        if hasattr(settings, "WEBQUILLS_HOMEPAGE_FEATURED_TAG"):
+            return getattr(settings, "WEBQUILLS_HOMEPAGE_FEATURED_TAG")
+        return "hpfeatured"
+
+    @property
+    def featured_tag(self):
+        if hasattr(settings, "WEBQUILLS_FEATURED_TAG"):
+            return getattr(settings, "WEBQUILLS_FEATURED_TAG")
+        return "featured"
+
+    @property
+    def num_featured(self):
+        if hasattr(settings, "WEBQUILLS_NUM_FEATURED"):
+            return getattr(settings, "WEBQUILLS_NUM_FEATURED")
+        return 4
