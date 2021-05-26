@@ -1,9 +1,7 @@
-{% comment %}Set the `article_list` variable when including this component.{% endcomment %}
-{% load i18n %}{% for article in article_list %}
+{% load i18n %}{% comment %}Set the `article` variable when including this component.{% endcomment %}
 <article class="blog-post">
   <h2 class="blog-post-title"><a href="{{ article.get_absolute_url}}">{{ article.headline }}</a></h2>
   <p class="blog-post-meta">{{ article.updated|date:"DATE_FORMAT"}} {{ article.byline }}</p>
   {{ article.excerpt|safe }}
   <p><a href="{{ article.get_absolute_url }}#continue-reading">{% trans "Continue reading" %}</a></p>
 </article><!-- /.blog-post -->
-{% endfor %}
