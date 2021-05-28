@@ -1,7 +1,9 @@
 
 {% extends 'base.html' %}{% load i18n static bootstrap4 %}
-{% block extra_css %}
-{% endblock extra_css %}
+{% block extra_head %}<link rel="alternate" type="application/rss+xml"
+  title="Webquills RSS ({{page.category.headline}})"
+  href="{% url "category-feed" page.category.slug %}">
+{% endblock extra_head %}
 {% block header %}{# Nav menus, top utils, and content showcase #}
 <div class="container">
 {% include "components/masthead.html" %}
