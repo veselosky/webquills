@@ -14,6 +14,8 @@ urlpatterns = [
     path("archive/", Redirect.as_view(url="/", permanent=True)),
     path("archive/1/", Redirect.as_view(url="/", permanent=True)),
     path("archive/<int:pagenum>/", views.archive, name="archive"),
+    path("feed/", views.SiteFeed(), name="site-feed"),
+    path("<slug>/feed/", views.CategoryFeed(), name="category-feed"),
     # These patterns are very generic, so keep last in list
     path("<category_slug>/", views.category, name="category"),
     # For SEO, redirect page 1 to index
