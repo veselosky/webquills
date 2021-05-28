@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.0/font/bootstrap-icons.css">
   <link href="{% static "blog.css" %}" rel="stylesheet">
   <link rel="alternate" type="application/rss+xml"
-  title="Webquills RSS (All articles)"
+  title="{{request.site.meta.name}} RSS (All articles)"
   href="{% url "site-feed" %}">
   {% block extra_head %}{% endblock %}
 </head>
