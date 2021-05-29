@@ -47,7 +47,7 @@ ALLOWED_HOSTS = env("ALLOWED_HOSTS", default=[])
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 SQLITE_DB = BASE_DIR / "var" / "db.sqlite3"
 DATABASES = {"default": env.db("DATABASE_URL", default=f"sqlite:///{SQLITE_DB}")}
-CACHES = {"default": env.cache("CACHE_URL", default="dummycache://")}
+CACHES = {"default": env.cache("CACHE_URL", default="locmemcache://")}
 # Email settings don't use a dict. Add to local vars instead.
 # https://django-environ.readthedocs.io/en/latest/#email-settings
 EMAIL_CONFIG = env.email_url("EMAIL_URL", default="consolemail://")
@@ -92,6 +92,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 INSTALLED_APPS = [
     # Our apps
     "webquills.theme_bs4_2021",
+    "webquills.linkmgr",
     "webquills.core",
     # third party apps
     "bootstrap4",
