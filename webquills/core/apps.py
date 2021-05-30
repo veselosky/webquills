@@ -5,6 +5,7 @@
 ###############################################################################
 from django.apps import AppConfig
 from django.conf import settings
+from django.utils.translation import gettext_lazy as _
 
 
 class CoreConfig(AppConfig):
@@ -12,6 +13,8 @@ class CoreConfig(AppConfig):
     # The default label "core" conflicts with wagtail.core, so we will call
     # ourselves...
     label = "webquills"
+    # Hack: admin sorts apps by verbose name. Pull this to top.
+    verbose_name = _("1. Webquills")
 
     def get_default_image_size(self):
         return (1000, 1000)

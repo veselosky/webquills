@@ -1,0 +1,9 @@
+{% if links %}<h4 class="font-italic">{{title}}</h4>
+<ol class="list-unstyled">
+{% for link in links %}
+<li><a href="{{link.url}}"><i class="bi-{{link.icon}}"></i> {{link.text}}</a></li>
+{% empty %}
+<li>No links in this category</li>
+{% endfor %}
+</ol>
+{% endif %}
