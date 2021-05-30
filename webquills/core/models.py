@@ -625,9 +625,9 @@ class ArticlePage(AbstractPage):
         been specified, returns the full body text."""
         if not self.body:
             return ""
-        excerpt, _ = self.body.split(
+        excerpt = self.body.split(
             settings.TINYMCE_DEFAULT_CONFIG["pagebreak_separator"], maxsplit=1
-        )
+        )[0]
         return excerpt
 
     def get_absolute_url(self):
