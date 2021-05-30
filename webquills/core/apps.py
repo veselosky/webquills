@@ -12,6 +12,8 @@ class CoreConfig(AppConfig):
     # The default label "core" conflicts with wagtail.core, so we will call
     # ourselves...
     label = "webquills"
+    # Hack: admin sorts apps by verbose name. Pull this to top.
+    verbose_name = "1. Webquills"
 
     def get_default_image_size(self):
         return (1000, 1000)

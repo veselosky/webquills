@@ -7,8 +7,8 @@ from django.utils.translation import gettext_lazy as _
 class LinkCategory(models.Model):
     class Meta:
         unique_together = ("site", "slug")
-        verbose_name = _("category")
-        verbose_name_plural = _("categories")
+        verbose_name = _("link list")
+        verbose_name_plural = _("link lists")
 
     name = models.CharField(_("name"), max_length=50, blank=False, null=False)
     slug = models.SlugField(_("slug"))
@@ -43,10 +43,13 @@ class Link(models.Model):
         blank=False,
         null=False,
         default="link-45deg",
-        help_text="https://icons.getbootstrap.com/#icons",
+        help_text="<a href=https://icons.getbootstrap.com/#icons target=iconlist>icon list</a>",
     )
     category = models.ForeignKey(
-        LinkCategory, verbose_name=_(""), on_delete=models.CASCADE, related_name="links"
+        LinkCategory,
+        verbose_name=_("list"),
+        on_delete=models.CASCADE,
+        related_name="links",
     )
 
     def __str__(self) -> str:

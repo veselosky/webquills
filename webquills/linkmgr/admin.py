@@ -12,6 +12,7 @@ class LinkCategoryAdmin(admin.ModelAdmin):
     fields = ("site", "name", "slug")
     inlines = (LinkInline,)
     list_display = ("name",)
+    list_filter = ("site",)
     prepopulated_fields = {"slug": ("name",)}
 
 
