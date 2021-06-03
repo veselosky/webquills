@@ -21,7 +21,6 @@ def image_url(instance: Image, op: str = "", **kwargs):
 @register.simple_tag(takes_context=True)
 def menu_active(context, menuitem: str):
     path = str(context["request"].path)
-    print(f"Menu active path: {path} menupage: {menuitem}")
     # Special case because every url starts with /
     if menuitem == "/":
         if path == "/":
