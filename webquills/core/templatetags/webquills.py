@@ -16,3 +16,18 @@ def image_url(instance: Image, op: str = "", **kwargs):
             "image_url called without op. Did you for get to quote the operation name?"
         )
     return instance.file.url
+
+
+@register.simple_tag(takes_context=True)
+def menu_active(context, menuitem: str):
+    path = str(context["request"].path)
+    print(f"Menu active path: {path} menupage: {menuitem}")
+    # Special case because every url starts with /
+    if menuitem == "/":
+        if path == "/":
+            return "btn btn-outline-primary"
+        return ""
+    # Otherwise, if the page is under the menupage's directory, it is active
+    if path.startswith(menuitem):
+        return "btn btn-outline-primary"
+    return ""
