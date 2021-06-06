@@ -50,6 +50,11 @@ class CopyrightLicense(models.Model):
         return self.name
 
 
+class AuthorManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().select_related("copyright_license")
+
+
 class Author(models.Model):
     """
     Author is a container for attribution and copyright information, not necessarily
@@ -59,6 +64,8 @@ class Author(models.Model):
     class Meta:
         verbose_name = _("author")
         verbose_name_plural = _("authors")
+
+    objects = AuthorManager()
 
     byline = models.CharField(
         _("byline"),
@@ -445,8 +452,17 @@ class Status(models.TextChoices):
 
 
 class PageManager(models.Manager):
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .select_related(
+                "site", "author", "featured_image", "custom_copyright_license"
+            )
+        )
+
     def live(self):
-        return self.filter(
+        return self.get_queryset().filter(
             models.Q(expired__isnull=True) | models.Q(expired__gt=timezone.now()),
             status=Status.USABLE,
             published__lte=timezone.now(),
@@ -597,7 +613,7 @@ class CategoryPage(AbstractPage):
 
 class ArticleManager(PageManager):
     def get_queryset(self):
-        return super().get_queryset().select_related("category", "featured_image")
+        return super().get_queryset().select_related("category")
 
 
 class ArticlePage(AbstractPage):
