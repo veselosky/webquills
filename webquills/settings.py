@@ -92,6 +92,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 INSTALLED_APPS = [
     # Our apps
     "webquills.theme_bs4_2021",
+    "webquills.sites",  # enhanced sites framework
     "webquills.linkmgr",
     "webquills.core",
     # third party apps
@@ -118,7 +119,7 @@ MIDDLEWARE = [
     # "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "django.contrib.sites.middleware.CurrentSiteMiddleware",  # set request.site
+    "webquills.sites.middleware.SitesMiddleware",  # set request.site
     # Set this in Apache, not Django.
     # https://docs.djangoproject.com/en/3.2/ref/clickjacking/
     # "django.middleware.clickjacking.XFrameOptionsMiddleware",

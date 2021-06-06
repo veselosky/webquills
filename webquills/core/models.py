@@ -245,41 +245,6 @@ class Copyrightable(models.Model):
         return timezone.now().year
 
 
-class SiteMetaManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().select_related("author", "site")
-
-
-class SiteMeta(models.Model):
-    class Meta:
-        verbose_name = _("site metadata")
-        verbose_name_plural = _("site metadata")
-
-    site = models.OneToOneField(
-        "sites.Site", on_delete=models.CASCADE, primary_key=True, related_name="meta"
-    )
-    name = models.CharField(_("name"), max_length=50)
-    tagline = models.CharField(
-        _("tagline"),
-        max_length=255,
-        blank=True,
-        null=True,
-        help_text=_("Subtitle. A few words letting visitors know what to expect."),
-    )
-    author = models.ForeignKey(
-        Author,
-        verbose_name=_("author"),
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        help_text=_("Default author for any page without an explicit author"),
-    )
-    objects = SiteMetaManager()
-
-    def __str__(self) -> str:
-        return self.name
-
-
 ###############################################################################
 # The Image model
 ###############################################################################
