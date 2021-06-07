@@ -186,7 +186,7 @@ class Copyrightable(models.Model):
         if self.author and self.author.byline:
             return self.author.byline
         try:
-            return self.site.meta.author.byline
+            return self.site.author.byline
         except AttributeError:
             pass
         return ""
@@ -198,7 +198,7 @@ class Copyrightable(models.Model):
         if self.author and self.author.about:
             return self.author.about
         try:
-            return self.site.meta.author.about
+            return self.site.author.about
         except AttributeError:
             pass
         return ""
@@ -210,7 +210,7 @@ class Copyrightable(models.Model):
         if self.author and self.author.copyright_holder:
             return self.author.copyright_holder
         try:
-            return self.site.meta.author.copyright_holder
+            return self.site.author.copyright_holder
         except AttributeError:
             pass
         return ""
@@ -222,7 +222,7 @@ class Copyrightable(models.Model):
         if self.author and self.author.copyright_license:
             return self.author.copyright_license
         try:
-            return self.site.meta.author.copyright_license
+            return self.site.author.copyright_license
         except AttributeError:
             pass
         return None
@@ -263,7 +263,7 @@ class Image(Copyrightable, models.Model):
         height_field="height",
     )
     site = models.ForeignKey(
-        "sites.Site",
+        "wqsites.Site",
         on_delete=models.PROTECT,
         verbose_name=_("site"),
         help_text=_(
@@ -442,7 +442,7 @@ class AbstractPage(Copyrightable, models.Model):
 
     # Common fields for all pages
     site = models.ForeignKey(
-        "sites.Site",
+        "wqsites.Site",
         on_delete=models.PROTECT,
         verbose_name=_("site"),
         related_name="%(class)ss",
