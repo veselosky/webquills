@@ -2,7 +2,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from django.contrib.sites.models import Site
+from webquills.sites.models import Site
 from django.core.files.images import ImageFile
 from django.test import TestCase
 import PIL as pillow
@@ -14,7 +14,7 @@ from webquills.core.models import Image
 class TestImageModel(TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
-        cls.site = Site.objects.get_current()
+        cls.site = Site.objects.create(domain="testing.com", name="testing.com")
         return super().setUpTestData()
 
     def test_image_autofields(self):
