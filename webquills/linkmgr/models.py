@@ -13,11 +13,12 @@ class LinkCategory(models.Model):
     name = models.CharField(_("name"), max_length=50, blank=False, null=False)
     slug = models.SlugField(_("slug"))
     site = models.ForeignKey(
-        "sites.Site",
+        "wqsites.Site",
         verbose_name=_("site"),
         on_delete=models.CASCADE,
         blank=False,
         null=False,
+        related_name="link_lists",
     )
 
     def __str__(self) -> str:
