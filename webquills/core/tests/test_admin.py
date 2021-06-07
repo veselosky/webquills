@@ -52,12 +52,12 @@ class TestAdmins(TestCase):
         assert resp.status_code == 200
 
     def test_sites_list(self):
-        url = "/admin/wqsites/site/"
+        url = "/admin/sites/site/"
         resp = self.client.get(url)
         assert resp.status_code == 200
 
     def test_sites_add(self):
-        url = "/admin/wqsites/site/add/"
+        url = "/admin/sites/site/add/"
         resp = self.client.get(url)
         assert resp.status_code == 200
 

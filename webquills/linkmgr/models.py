@@ -13,7 +13,7 @@ class LinkCategory(models.Model):
     name = models.CharField(_("name"), max_length=50, blank=False, null=False)
     slug = models.SlugField(_("slug"))
     site = models.ForeignKey(
-        "wqsites.Site",
+        "sites.Site",
         verbose_name=_("site"),
         on_delete=models.CASCADE,
         blank=False,

@@ -90,7 +90,7 @@
         }
     },
     {
-        "model": "wqsites.site",
+        "model": "sites.site",
         "pk": 2,
         "fields": {
             "domain": "example.com",
@@ -100,7 +100,7 @@
         }
     },
     {
-        "model": "wqsites.site",
+        "model": "sites.site",
         "pk": 1,
         "fields": {
             "domain": "webquills.com",

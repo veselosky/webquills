@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.contrib.sites.models import Site as DjangoSite
+from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models import Case, IntegerField, Q, When
 from django.http.request import split_domain_port
@@ -9,8 +9,6 @@ from webquills.core.models import Author
 
 
 SITE_CACHE = {}
-
-
 MATCH_HOSTNAME = 0
 MATCH_DOMAIN = 1
 MATCH_DEFAULT = 2
@@ -61,11 +59,42 @@ class SiteManager(models.Manager):
             SITE_CACHE[site.domain] = site
         return sites[0]
 
+    def get_current(self, request=None):
+        "Implemented for compatibility with Django sites."
+        if request:
+            return self._get_for_request(request)
+        elif getattr(settings, "SITE_ID", ""):
+            return self.get(id=settings.SITE_ID)
 
-class Site(DjangoSite):
+        raise ImproperlyConfigured(
+            "You're using the Webquills sites framework without having "
+            "set the SITE_ID setting. Create a site in your database and "
+            "set the SITE_ID setting or pass a request to "
+            "Site.objects.get_current() to fix this error."
+        )
+
+    def clear_cache(self):
+        """Clear the ``Site`` object cache."""
+        global SITE_CACHE
+        SITE_CACHE = {}
+
+    def get_by_natural_key(self, domain):
+        return self.get(domain=domain)
+
+
+class Site(models.Model):
     class Meta:
+        ordering = ["domain"]
         verbose_name = _("site")
         verbose_name_plural = _("sites")
+
+    domain = models.CharField(
+        _("domain name"),
+        max_length=100,
+        unique=True,
+    )
+
+    name = models.CharField(_("display name"), max_length=50)
 
     tagline = models.CharField(
         _("tagline"),
@@ -74,6 +103,7 @@ class Site(DjangoSite):
         null=True,
         help_text=_("Subtitle. A few words letting visitors know what to expect."),
     )
+
     author = models.ForeignKey(
         Author,
         verbose_name=_("author"),
@@ -82,6 +112,7 @@ class Site(DjangoSite):
         null=True,
         help_text=_("Default author for any page without an explicit author"),
     )
+
     objects = SiteManager()
 
     def __str__(self) -> str:
@@ -99,3 +130,6 @@ class Site(DjangoSite):
         # Hopefully we don't go around deleting sites too often, but still...
         SITE_CACHE.pop(self.domain, None)
         return super().delete(*args, **kwargs)
+
+    def natural_key(self):
+        return (self.domain,)

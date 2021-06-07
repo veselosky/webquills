@@ -263,7 +263,7 @@ class Image(Copyrightable, models.Model):
         height_field="height",
     )
     site = models.ForeignKey(
-        "wqsites.Site",
+        "sites.Site",
         on_delete=models.PROTECT,
         verbose_name=_("site"),
         help_text=_(
@@ -442,7 +442,7 @@ class AbstractPage(Copyrightable, models.Model):
 
     # Common fields for all pages
     site = models.ForeignKey(
-        "wqsites.Site",
+        "sites.Site",
         on_delete=models.PROTECT,
         verbose_name=_("site"),
         related_name="%(class)ss",
