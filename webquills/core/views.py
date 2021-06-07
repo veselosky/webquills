@@ -138,7 +138,7 @@ class SiteFeed(Feed):
         return request.site
 
     def title(self, obj):
-        return f"{obj.meta.name} -- {obj.meta.tagline}"
+        return f"{obj.name} -- {obj.tagline}"
 
     def link(self, obj):
         return reverse("home")
@@ -151,8 +151,8 @@ class SiteFeed(Feed):
         return reverse("site-feed")
 
     def author_name(self, obj):
-        if obj.meta.author:
-            return obj.meta.author.byline
+        if obj.author:
+            return obj.author.byline
         return None
 
     def feed_copyright(self, obj):

@@ -1,4 +1,4 @@
-from django.contrib.sites.models import Site
+from webquills.sites.models import Site
 from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
 from django.template import engines
@@ -12,7 +12,7 @@ engine = engines["django"]
 class TestLinkManager(TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
-        site = Site.objects.get_current()
+        site = Site.objects.create(domain="test.com", name="Test")
         cls.category = LinkCategory.objects.create(
             name="Test Links",
             site=site,

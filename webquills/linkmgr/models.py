@@ -18,6 +18,7 @@ class LinkCategory(models.Model):
         on_delete=models.CASCADE,
         blank=False,
         null=False,
+        related_name="link_lists",
     )
 
     def __str__(self) -> str:

@@ -186,7 +186,7 @@ class Copyrightable(models.Model):
         if self.author and self.author.byline:
             return self.author.byline
         try:
-            return self.site.meta.author.byline
+            return self.site.author.byline
         except AttributeError:
             pass
         return ""
@@ -198,7 +198,7 @@ class Copyrightable(models.Model):
         if self.author and self.author.about:
             return self.author.about
         try:
-            return self.site.meta.author.about
+            return self.site.author.about
         except AttributeError:
             pass
         return ""
@@ -210,7 +210,7 @@ class Copyrightable(models.Model):
         if self.author and self.author.copyright_holder:
             return self.author.copyright_holder
         try:
-            return self.site.meta.author.copyright_holder
+            return self.site.author.copyright_holder
         except AttributeError:
             pass
         return ""
@@ -222,7 +222,7 @@ class Copyrightable(models.Model):
         if self.author and self.author.copyright_license:
             return self.author.copyright_license
         try:
-            return self.site.meta.author.copyright_license
+            return self.site.author.copyright_license
         except AttributeError:
             pass
         return None
@@ -243,41 +243,6 @@ class Copyrightable(models.Model):
     def copyright_year(self):
         "Subclasses should implement their own copyright year"
         return timezone.now().year
-
-
-class SiteMetaManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().select_related("author", "site")
-
-
-class SiteMeta(models.Model):
-    class Meta:
-        verbose_name = _("site metadata")
-        verbose_name_plural = _("site metadata")
-
-    site = models.OneToOneField(
-        "sites.Site", on_delete=models.CASCADE, primary_key=True, related_name="meta"
-    )
-    name = models.CharField(_("name"), max_length=50)
-    tagline = models.CharField(
-        _("tagline"),
-        max_length=255,
-        blank=True,
-        null=True,
-        help_text=_("Subtitle. A few words letting visitors know what to expect."),
-    )
-    author = models.ForeignKey(
-        Author,
-        verbose_name=_("author"),
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        help_text=_("Default author for any page without an explicit author"),
-    )
-    objects = SiteMetaManager()
-
-    def __str__(self) -> str:
-        return self.name
 
 
 ###############################################################################

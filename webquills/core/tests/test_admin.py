@@ -51,13 +51,13 @@ class TestAdmins(TestCase):
         resp = self.client.get(url)
         assert resp.status_code == 200
 
-    def test_sitemeta_list(self):
-        url = "/admin/webquills/sitemeta/"
+    def test_sites_list(self):
+        url = "/admin/sites/site/"
         resp = self.client.get(url)
         assert resp.status_code == 200
 
-    def test_sitemeta_add(self):
-        url = "/admin/webquills/sitemeta/add/"
+    def test_sites_add(self):
+        url = "/admin/sites/site/add/"
         resp = self.client.get(url)
         assert resp.status_code == 200
 

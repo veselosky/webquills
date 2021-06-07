@@ -90,18 +90,20 @@
         }
     },
     {
-        "model": "webquills.sitemeta",
+        "model": "sites.site",
         "pk": 2,
         "fields": {
+            "domain": "example.com",
             "name": "Example",
             "tagline": null,
             "author": null
         }
     },
     {
-        "model": "webquills.sitemeta",
+        "model": "sites.site",
         "pk": 1,
         "fields": {
+            "domain": "webquills.com",
             "name": "Webquills",
             "tagline": "Tips, Tools, and Tech for Writers",
             "author": 1
