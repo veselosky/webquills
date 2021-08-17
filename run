@@ -52,7 +52,7 @@ function setup_virtualenv() {
 }
 
 function tests {
-    tox -e py36-django31 $@
+    tox -e py38-django32 $@
 }
 
 TIMEFORMAT="Task completed in %3lR"
