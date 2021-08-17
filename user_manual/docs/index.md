@@ -29,7 +29,7 @@ items lacking specific attribution.
 An Attribution can also be associated with a WebQuills user. This is useful in
 cases where multiple users publish under the same psuedonym, or a single user
 publishes under multiple psuedonyms, allowing you to keep track internally of
-who create what.
+who created what.
 
 ### Use cases for Attributions
 
