@@ -42,7 +42,7 @@ function server {
 function setup_virtualenv() {
     # Create virtualenv and install requirements for dev
     if [ ! -d $BASE_DIR/venv ]; then
-        echo "Creating virtualenv in $BASE_DIR/venv"
+        echo "Creating virtualenv in $BASE_DIR/venv using $BASEPYTHON"
         $BASEPYTHON -m venv --prompt "$PROJECT_NAME" $BASE_DIR/venv
     fi
     echo "Installing pip requirements. May take a while. Grab a coffee."
@@ -52,7 +52,7 @@ function setup_virtualenv() {
 }
 
 function tests {
-    tox -e py36-django31 $@
+    tox -e py38-django32 $@
 }
 
 TIMEFORMAT="Task completed in %3lR"
