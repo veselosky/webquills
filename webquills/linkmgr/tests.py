@@ -27,6 +27,13 @@ class TestLinkManager(TestCase):
         cls.fakerequest = RequestFactory().get("/")
         cls.fakerequest.site = site
 
+    def test_iterate_category(self):
+        try:
+            for link in self.category:
+                assert hasattr(link, "get_absolute_url")
+        except BaseException:
+            assert False
+
     def test_template_tag(self):
         tpl = "{% load links %}{% link_category category.slug %}"
         template = engine.from_string(tpl)
