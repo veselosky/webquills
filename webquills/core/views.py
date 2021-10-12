@@ -28,7 +28,6 @@ def archive(request, pagenum: int = 1):
         "page": page,
         "pg": pg,
         "recent_articles": pg.object_list,
-        "topmenu": CategoryPage.objects.live(),
     }
     return render(request, template, context)
 
@@ -43,7 +42,6 @@ def article(request, category_slug, article_slug):
     template = page.get_template()
     context = {
         "page": page,
-        "topmenu": CategoryPage.objects.live(),
     }
     return render(request, template, context)
 
@@ -69,7 +67,6 @@ def category(request, category_slug: str, pagenum: int = 1):
         "page": page,
         "pg": pg,
         "recent_articles": pg.object_list,
-        "topmenu": CategoryPage.objects.live(),
     }
     return render(request, template, context)
 
@@ -105,7 +102,6 @@ def homepage(request):
         "page": page,
         "pg": pg,
         "recent_articles": pg.object_list,
-        "topmenu": CategoryPage.objects.live().filter(site=request.site),
     }
     return render(request, template, context)
 
