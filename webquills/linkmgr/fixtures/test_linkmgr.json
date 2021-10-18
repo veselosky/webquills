@@ -1,0 +1,38 @@
+[
+  {
+    "model": "linkmgr.linkcategory",
+    "pk": 1,
+    "fields": {
+      "name": "Test Links",
+      "slug": "test-links",
+      "site": 1
+    }
+  },
+  {
+    "model": "linkmgr.link",
+    "pk": 1,
+    "fields": {
+      "text": "link1",
+      "url": "http://example.com/1",
+      "category": 1
+    }
+  },
+  {
+    "model": "linkmgr.link",
+    "pk": 2,
+    "fields": {
+      "text": "link2",
+      "url": "http://example.com/2",
+      "category": 1
+    }
+  },
+  {
+    "model": "linkmgr.link",
+    "pk": 3,
+    "fields": {
+      "text": "link3",
+      "url": "http://example.com/3",
+      "category": 1
+    }
+  }
+]

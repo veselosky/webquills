@@ -5,7 +5,8 @@
   {% if page.credits %}{{page.credits|safe}}{% endif %}
 </div>
 {% endif %}
-
-<div class="p-3">
-{% include "links/category_links.html" with category_slug="follow-webquills" %}
-</div>
+{% for module in theme.sidebar_modules %}
+  <div class="p-3">
+  {% include module.partial_template %}
+  </div>
+{% endfor %}

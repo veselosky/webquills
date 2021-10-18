@@ -1,4 +1,4 @@
-{% if links %}<h4 class="font-italic">{{title}}</h4>
+{% if links %}<h4 class="font-italic">{% firstof title category.name %}</h4>
 <ol class="list-unstyled">
 {% for link in links %}
 <li><a href="{{link.url}}"><i class="bi-{{link.icon}}"></i> {{link.text}}</a></li>

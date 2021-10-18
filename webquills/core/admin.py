@@ -59,6 +59,8 @@ class ArticleAdmin(PageAdmin):
 
 
 class CategoryAdmin(PageAdmin):
+    list_display = ("headline", "site", "menu_order", "published", "status")
+    list_editable = ("menu_order",)
     fieldsets = (
         (
             "Metadata",
@@ -69,6 +71,7 @@ class CategoryAdmin(PageAdmin):
                     "status",
                     "published",
                     "updated_at",
+                    "menu_order",
                     "tags",
                 )
             },

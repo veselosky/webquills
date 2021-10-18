@@ -10,22 +10,25 @@ engine = engines["django"]
 
 
 class TestLinkManager(TestCase):
+    fixtures = ("test_linkmgr",)
+
     @classmethod
     def setUpTestData(cls) -> None:
-        site = Site.objects.create(domain="test.com", name="Test")
-        cls.category = LinkCategory.objects.create(
-            name="Test Links",
-            site=site,
-            slug="test-links",
-        )
-        cls.category.links.add(
-            Link(text="link1", url="http://example.com/1"),
-            Link(text="link2", url="http://example.com/2"),
-            Link(text="link3", url="http://example.com/3"),
-            bulk=False,
-        )
+        site = Site.objects.get(id=1)
+        cls.category = LinkCategory.objects.get(id=1)
         cls.fakerequest = RequestFactory().get("/")
         cls.fakerequest.site = site
+
+    def test_iterate_category(self):
+        try:
+            for link in self.category:
+                assert hasattr(link, "get_absolute_url")
+        except BaseException:
+            assert False
+
+    def test_subscript_category(self):
+        assert isinstance(self.category[0], Link)
+        assert len(self.category[0:]) == 3
 
     def test_template_tag(self):
         tpl = "{% load links %}{% link_category category.slug %}"
@@ -54,3 +57,11 @@ class TestLinkManager(TestCase):
         # cache should expire on save
         self.category.save()
         assert not cache.get(key)
+
+    def test_partial_template(self):
+        template = engine.get_template(self.category.partial_template)
+        out = template.render({"module": self.category, "request": self.fakerequest})
+        assert "Test Links" in out
+        assert "link1" in out
+        assert "link2" in out
+        assert "link3" in out

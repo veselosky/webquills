@@ -28,7 +28,6 @@ def archive(request, pagenum: int = 1):
         "page": page,
         "pg": pg,
         "recent_articles": pg.object_list,
-        "topmenu": CategoryPage.objects.live(),
     }
     return render(request, template, context)
 
@@ -43,7 +42,6 @@ def article(request, category_slug, article_slug):
     template = page.get_template()
     context = {
         "page": page,
-        "topmenu": CategoryPage.objects.live(),
     }
     return render(request, template, context)
 
@@ -69,23 +67,23 @@ def category(request, category_slug: str, pagenum: int = 1):
         "page": page,
         "pg": pg,
         "recent_articles": pg.object_list,
-        "topmenu": CategoryPage.objects.live(),
     }
     return render(request, template, context)
 
 
 def homepage(request):
-    wq = apps.get_app_config("webquills")
+    config = apps.get_app_config("webquills")
     # The most recently published live home page. This allows you to schedule a new
     # home page without disturbing the existing one.
     page = HomePage.objects.live().filter(site=request.site).latest()
     template = page.get_template()
 
     # The home page wants a list of featured articles, and a list of recent articles.
-    pg = Paginator(ArticlePage.objects.live(), wq.pagelength).get_page(1)
-    featured_articles = ArticlePage.objects.live().filter(
-        tags__name__in=[wq.homepage_featured_tag]
-    )[: wq.num_featured]
+    site_articles = ArticlePage.objects.live().filter(site=request.site)
+    pg = Paginator(site_articles, config.pagelength).get_page(1)
+    featured_articles = site_articles.filter(
+        tags__name__in=[config.homepage_featured_tag]
+    )[: config.num_featured]
 
     # If a call to action module is defined, set up the data structure
     cta = None
@@ -104,7 +102,6 @@ def homepage(request):
         "page": page,
         "pg": pg,
         "recent_articles": pg.object_list,
-        "topmenu": CategoryPage.objects.live(),
     }
     return render(request, template, context)
 

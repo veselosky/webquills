@@ -559,14 +559,18 @@ class CategoryPage(AbstractPage):
     class Meta:
         verbose_name = _("category page")
         verbose_name_plural = _("category pages")
-        ordering = ["-published"]
+        ordering = ["site", "menu_order"]
         get_latest_by = "published"
-
-    show_in_menus_default = True
+        indexes = [models.Index(fields=["site", "menu_order"])]
 
     intro = HTMLField(
         verbose_name=_("intro"),
         blank=True,
+    )
+
+    menu_order = models.PositiveSmallIntegerField(
+        verbose_name=_("menu order"),
+        default=0,
     )
 
     def get_absolute_url(self):
