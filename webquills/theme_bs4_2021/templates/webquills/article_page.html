@@ -1,5 +1,5 @@
 
-{% extends 'base.html' %}{% load i18n static bootstrap4 %}
+{% extends 'base.html' %}{% load i18n static %}
 {% block extra_head %}<link rel="alternate" type="application/rss+xml"
   title="{{request.site.name}} RSS ({{page.category.headline}})"
   href="{% url "category-feed" page.category.slug %}">

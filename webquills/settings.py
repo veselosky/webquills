@@ -96,7 +96,6 @@ INSTALLED_APPS = [
     "webquills.linkmgr",
     "webquills.core",
     # third party apps
-    "bootstrap4",
     "django_celery_beat",
     "taggit",
     "tinymce",
