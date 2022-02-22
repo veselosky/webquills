@@ -7,22 +7,21 @@
 BASEPYTHON=`which python3.8 || which python3 || which python`
 BASE_DIR=$(cd `dirname "$0"`; pwd)
 PROJECT_NAME=`basename "$BASE_DIR"`
-PYTHON="$BASE_DIR/venv/bin/python"
+VERR="Activate your virtualenv first (try ./run bootstrap)."
 
 function bootstrap {
-    setup_virtualenv
     # Create a default .env file for dev
     [ ! -e "$BASE_DIR/.env" ] && cp $BASE_DIR/example.env $BASE_DIR/.env
     # Make sure there's a var dir for tmp files.
     [ ! -d "$BASE_DIR/var" ] && mkdir -p "$BASE_DIR/var"
-    $PYTHON $BASE_DIR/manage.py migrate
-}
+    # If we're not already in a virtualenv, try to create one
+    [ -n $VIRTUAL_ENV ] && PYTHON="$VIRTUAL_ENV/bin/python" || setup_virtualenv
+    echo "Installing pip requirements. May take a while. Grab a coffee."
+    # First, let's upgrade pip so it doesn't complain when installing the rest
+    $PYTHON -m pip install --upgrade -q pip
+    $PYTHON -m pip install -r $BASE_DIR/dev-requirements.txt -q
 
-function evolve {
-    $PYTHON $BASE_DIR/manage.py migrate webquills zero
-    rm $BASE_DIR/webquills/core/migrations/000*.py
-    $PYTHON $BASE_DIR/manage.py makemigrations
-    migrate
+    $PYTHON $BASE_DIR/manage.py migrate
 }
 
 function help {
@@ -32,27 +31,49 @@ function help {
 }
 
 function migrate {
-    $PYTHON $BASE_DIR/manage.py migrate
+    [ -n $VIRTUAL_ENV ] && $VIRTUAL_ENV/bin/python $BASE_DIR/manage.py migrate || echo $VERR
 }
 
 function server {
-    $PYTHON $BASE_DIR/manage.py runserver
+    [ -n $VIRTUAL_ENV ] && $VIRTUAL_ENV/bin/python $BASE_DIR/manage.py runserver || echo $VERR
 }
 
 function setup_virtualenv() {
-    # Create virtualenv and install requirements for dev
-    if [ ! -d $BASE_DIR/venv ]; then
-        echo "Creating virtualenv in $BASE_DIR/venv using $BASEPYTHON"
-        $BASEPYTHON -m venv --prompt "$PROJECT_NAME" $BASE_DIR/venv
-    fi
-    echo "Installing pip requirements. May take a while. Grab a coffee."
-    # First, let's upgrade pip so it doesn't complain when installing the rest
-    $BASE_DIR/venv/bin/pip install --upgrade -q pip
-    $BASE_DIR/venv/bin/pip install -r $BASE_DIR/deps/dev.pip.txt -q --log $BASE_DIR/venv/pip.log
+    # Creates a virtualenv for this project if one does not exist
+    # Set the global PYTHON var to the path to the virtualenv's python
+
+    # If using basic venv/virtualenv, return that
+    echo "Setting local venvpy" >&2
+    local venvpy="$BASE_DIR/venv/bin/python"
+    echo "Return local venvpy if found" >&2
+    [ -x "$venvpy" ] && PYTHON="$venvpy" && return 0
+
+    # If using pyenv local, use it
+    echo "If .python-version, just return which python" >&2
+    [ -e "$BASE_DIR/.python-version" ] && PYTHON=`which python` && return 0
+
+    # If pyenv is configured to activate virtualenvs, use pyenv virtualenv
+    echo "If pyenv-virtualenv is active, make a pyenv virtualenv" >&2
+    local pyver=`$BASEPYTHON --version`
+    [ -n "$PYENV_VIRTUALENV_INIT" ] && \
+        pyenv virtualenv ${pyver#"Python "} "$PROJECT_NAME" && \
+        pyenv local $PROJECT_NAME && \
+        pyenv global >> .python-version && \
+        PYTHON=`which python` && return 0
+
+    # Create old-school virtualenv
+    echo "Use python -m venv" >&2
+    $BASEPYTHON -m venv --prompt "$PROJECT_NAME" $BASE_DIR/venv && PYTHON="$venvpy"
 }
 
 function tests {
     tox -e py38-django32 $@
+}
+
+function upgrade_requirements {
+    export CUSTOM_COMPILE_COMMAND="./run upgrade_requirements"
+    [ -n $VIRTUAL_ENV ] && $VIRTUAL_ENV/bin/python -m piptools compile -U -q -o requirements.txt --generate-hashes --reuse-hashes --allow-unsafe --build-isolation deps/prod.pip.in || echo $VERR
+    [ -n $VIRTUAL_ENV ] && $VIRTUAL_ENV/bin/python -m piptools compile -U -q -o dev-requirements.txt --generate-hashes --reuse-hashes --allow-unsafe --build-isolation deps/dev.pip.in || echo $VERR
 }
 
 TIMEFORMAT="Task completed in %3lR"

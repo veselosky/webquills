@@ -1,7 +1,9 @@
--r ../requirements.txt
+-r base.pip.txt
 -r test.pip.txt
 black
+django>=3.2
 django-debug-toolbar
 django-extensions
 mkdocs
+pip-tools
 tox
