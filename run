@@ -70,5 +70,11 @@ function tests {
     tox -e py38-django32 $@
 }
 
+function upgrade_requirements {
+    export CUSTOM_COMPILE_COMMAND="./run upgrade_requirements"
+    [ -n $VIRTUAL_ENV ] && $VIRTUAL_ENV/bin/python -m piptools compile -U -q -o requirements.txt --generate-hashes --reuse-hashes --allow-unsafe --build-isolation deps/prod.pip.in || echo $VERR
+    [ -n $VIRTUAL_ENV ] && $VIRTUAL_ENV/bin/python -m piptools compile -U -q -o dev-requirements.txt --generate-hashes --reuse-hashes --allow-unsafe --build-isolation deps/dev.pip.in || echo $VERR
+}
+
 TIMEFORMAT="Task completed in %3lR"
 time ${@:-server}
