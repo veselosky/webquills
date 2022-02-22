@@ -40,7 +40,7 @@ function server {
 
 function setup_virtualenv() {
     # Creates a virtualenv for this project if one does not exist
-    # Returns the path to the virtualenv's python
+    # Set the global PYTHON var to the path to the virtualenv's python
 
     # If using basic venv/virtualenv, return that
     echo "Setting local venvpy" >&2
