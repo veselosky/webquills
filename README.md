@@ -1,20 +1,18 @@
-# WebQuills: A Django Publishing System
+# WebQuills: A Multi-site, Multi-user Publishing System
 
-Webquills is an example of how to construct a publishing system with Django,
-using development best practices.
+The WebQuills publishing system allows multiple users to publish websites while
+maximizing efficiency of production and delivery. An individual user can manage multiple
+websites, and can invite other users to participate in site production.
 
-- Configuration from environment variables using django-environ
-- Unit testing with pytest
-- Testing matrix against multiple Python and Django versions using tox
-- Tests include checks for missing migrations and code style (code formatted
-  with Black)
-- Continuous integration testing using Github Actions workflows
-- Python dependencies managed with pip-tools for consistent repeatable builds
-  (transitive dependencies are locked)
-- Tedious functions automated with the `run` script
+The sites produced by WebQuills are intended to be lightweight, energy efficient,
+bandwidth efficient, and inexpensive to operate. Most site pages are generated at
+production time and served statically via CDN, improving performance and reducing server
+costs over traditional dynamic site delivery.
 
-Key architectural features of the software include:
+## Features
 
-- Multi-tenant using a custom Sites framework compatible with Django's Sites
-  framework
-- Themes installable as Django apps (theming is still a work in progress)
+- Blog-style site organization
+- For SEO, articles are URL-mapped by section (topic) rather than by date.
+- RSS Feeds are provided for the site and each section.
+- Sitemaps are automatically generated.
+- Pages include OpenGraph and Schema.org metadata for improved SEO and social sharing.
