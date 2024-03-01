@@ -18,3 +18,9 @@
 
 - [ ] Merge original WebQuills models and GenericSite models with the intent to support
       multi-user blogs, including author profiles.
+- [ ] Preserve the Author as separate model from WebQuills. Include profile info (bio,
+      contact, socials) as well as default copyright attribution (can always be
+      overriden at the object level).
+- [ ] Keep Open Graph and add Schema.org outputs, but remove Pydantic dependency; just
+      write output routines in the models directly.
+- [ ] New content model based on stack of bricks.
