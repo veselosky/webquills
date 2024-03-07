@@ -1,7 +1,0 @@
-# Packages that need to be installed in a virtual environment in order for
-# tox to run all its tests.
-coverage
-pycodestyle
-pytest
-pytest-cov
-pytest-django

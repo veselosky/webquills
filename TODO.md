@@ -1,8 +1,7 @@
 # WebQuills Overhaul Task List
 
-- [ ] Move run script functions into manage.py or management commands
-- [ ] Consolidate requirements and manage with UV
-- [ ] Use UV to manage dev virtualenvs
+- [x] Consolidate requirements and manage with UV
+- [x] Use UV to manage dev virtualenvs
 - [ ] Update Github actions to include packaging releases
 - [ ] Replace sites framework with Django, as in GenericSite
 - [ ] Recreate the core content functions in a new app
@@ -23,4 +22,3 @@
       overriden at the object level).
 - [ ] Keep Open Graph and add Schema.org outputs, but remove Pydantic dependency; just
       write output routines in the models directly.
-- [ ] New content model based on stack of bricks.
