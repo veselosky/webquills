@@ -1,10 +1,10 @@
-from webquills.sites.models import Site
+from django.contrib.sites.models import Site
 from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
 from django.template import engines
 from django.test import RequestFactory, TestCase
 
-from .models import LinkCategory, Link
+from .models import LinkList, Link
 
 engine = engines["django"]
 
@@ -15,7 +15,7 @@ class TestLinkManager(TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
         site = Site.objects.get(id=1)
-        cls.category = LinkCategory.objects.get(id=1)
+        cls.category = LinkList.objects.get(id=1)
         cls.fakerequest = RequestFactory().get("/")
         cls.fakerequest.site = site
 

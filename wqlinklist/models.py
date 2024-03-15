@@ -4,13 +4,13 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
-class LinkCategoryManager(models.Manager):
+class LinkListManager(models.Manager):
     def get_queryset(self):
         # a category is just a container for links, always load them
         return super().get_queryset().prefetch_related("links")
 
 
-class LinkCategory(models.Model):
+class LinkList(models.Model):
     class Meta:
         unique_together = ("site", "slug")
         verbose_name = _("link list")
@@ -26,7 +26,7 @@ class LinkCategory(models.Model):
         null=False,
         related_name="link_lists",
     )
-    objects = LinkCategoryManager()
+    objects = LinkListManager()
 
     # Define partial_template to make this model includable as a theme module
     partial_template = "links/theme_module.html"
@@ -49,7 +49,7 @@ class LinkCategory(models.Model):
 
 class Link(models.Model):
     class Meta:
-        order_with_respect_to = "category"
+        order_with_respect_to = "link_list"
         verbose_name = _("link")
         verbose_name_plural = _("links")
 
@@ -64,8 +64,8 @@ class Link(models.Model):
         default="link-45deg",
         help_text="<a href=https://icons.getbootstrap.com/#icons target=iconlist>icon list</a>",
     )
-    category = models.ForeignKey(
-        LinkCategory,
+    link_list = models.ForeignKey(
+        LinkList,
         verbose_name=_("list"),
         on_delete=models.CASCADE,
         related_name="links",

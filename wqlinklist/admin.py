@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Link, LinkCategory
+from .models import Link, LinkList
 
 
 class LinkInline(admin.StackedInline):
@@ -16,4 +16,4 @@ class LinkCategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
 
 
-admin.site.register(LinkCategory, LinkCategoryAdmin)
+admin.site.register(LinkList, LinkCategoryAdmin)

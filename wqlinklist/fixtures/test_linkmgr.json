@@ -1,6 +1,6 @@
 [
   {
-    "model": "linkmgr.linkcategory",
+    "model": "wqlinklist.linklist",
     "pk": 1,
     "fields": {
       "name": "Test Links",
@@ -9,30 +9,30 @@
     }
   },
   {
-    "model": "linkmgr.link",
+    "model": "wqlinklist.link",
     "pk": 1,
     "fields": {
       "text": "link1",
       "url": "http://example.com/1",
-      "category": 1
+      "link_list": 1
     }
   },
   {
-    "model": "linkmgr.link",
+    "model": "wqlinklist.link",
     "pk": 2,
     "fields": {
       "text": "link2",
       "url": "http://example.com/2",
-      "category": 1
+      "link_list": 1
     }
   },
   {
-    "model": "linkmgr.link",
+    "model": "wqlinklist.link",
     "pk": 3,
     "fields": {
       "text": "link3",
       "url": "http://example.com/3",
-      "category": 1
+      "link_list": 1
     }
   }
 ]
