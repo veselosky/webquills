@@ -3,28 +3,35 @@ from django.urls import include, path
 from django.contrib import admin
 from django.views.generic.base import RedirectView as Redirect
 
-from webquills.core import views
+from wqcontent import buildable_views as generic
 
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("mce/recent_images.json", views.tiny_image_list, name="mce-recent-images"),
-    path("", views.homepage, name="home"),
-    # For SEO, redirect page 1 to index
-    path("archive/", Redirect.as_view(url="/", permanent=True)),
-    path("archive/1/", Redirect.as_view(url="/", permanent=True)),
-    path("archive/<int:pagenum>/", views.archive, name="archive"),
-    path("feed/", views.SiteFeed(), name="site-feed"),
-    path("<slug>/feed/", views.CategoryFeed(), name="category-feed"),
-    # These patterns are very generic, so keep last in list
-    path("<category_slug>/", views.category, name="category"),
-    # For SEO, redirect page 1 to index
+    path("admin/doc/", include("django.contrib.admindocs.urls")),
+    path("accounts/", include("django.contrib.auth.urls")),
+    path("<slug:section_slug>/feed/", Redirect.as_view(pattern_name="section_feed")),
+    path("feed/", Redirect.as_view(pattern_name="site_feed")),
+    # URLs below can be statically generated.
+    # Home page pagination needs to come before the other page patterns to match.
+    path("page_<int:page>.html", generic.HomePageView.as_view(), name="home_paginated"),
     path(
-        "<category_slug>/1/",
-        Redirect.as_view(url="/%(category_slug)s/", permanent=True),
+        "<slug:section_slug>/page_<int:page>.html",
+        generic.SectionView.as_view(),
+        name="section_paginated",
     ),
-    path("<category_slug>/<int:pagenum>/", views.category, name="category_archive"),
-    path("<category_slug>/<article_slug>/", views.article, name="article"),
+    path(
+        "<slug:section_slug>/<slug:article_slug>.html",
+        generic.ArticleDetailView.as_view(),
+        name="article_page",
+    ),
+    path(
+        "<slug:page_slug>.html", generic.PageDetailView.as_view(), name="landing_page"
+    ),
+    path("<slug:section_slug>/", generic.SectionView.as_view(), name="section_page"),
+    path("<slug:section_slug>/index.rss", generic.SectionFeed(), name="section_feed"),
+    path("index.rss", generic.SiteFeed(), name="site_feed"),
+    path("", generic.HomePageView.as_view(), name="home_page"),
 ]
 
 if settings.DEBUG:

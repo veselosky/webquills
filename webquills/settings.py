@@ -91,20 +91,23 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 # templates from 3rd parties, list our apps first, stock stuff last.
 INSTALLED_APPS = [
     # Our apps
-    "webquills.theme_bs4_2021",
-    "webquills.sites",  # enhanced sites framework
-    "webquills.linkmgr",
-    "webquills.core",
+    "wqlinklist",
+    "wqcontent",
+    # "webquills.theme_bs4_2021",
+    # "webquills.sites",  # enhanced sites framework
+    # "webquills.linkmgr",
+    # "webquills.core",
     # third party apps
     "django_celery_beat",
     "taggit",
-    "tinymce",
     # core Django apps
     "django.contrib.admin",
+    "django.contrib.admindocs",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.messages",
     "django.contrib.sessions",
+    "django.contrib.sites",
     "django.contrib.staticfiles",
 ]
 
