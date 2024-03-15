@@ -3,6 +3,7 @@
         "esbenp.prettier-vscode",
         "ms-python.python",
         "charliermarsh.ruff",
-        "batisteo.vscode-django"
+        "batisteo.vscode-django",
+        "monosans.djlint"
     ]
 }

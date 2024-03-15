@@ -1,4 +1,5 @@
 -r requirements.in
 coverage >= 7.2.2
 django-debug-toolbar >= 4.0.0
+djlint >= 1.34.1
 ipython >= 8.12

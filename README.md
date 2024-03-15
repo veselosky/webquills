@@ -16,3 +16,4 @@ costs over traditional dynamic site delivery.
 - RSS Feeds are provided for the site and each section.
 - Sitemaps are automatically generated.
 - Pages include OpenGraph and Schema.org metadata for improved SEO and social sharing.
+- Content is searchable (via PageFind).
