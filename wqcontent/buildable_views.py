@@ -20,8 +20,6 @@ class CreativeWorkDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         conf = apps.get_app_config("wqcontent")
 
-        context["opengraph"] = self.object.opengraph
-
         # Allow passing kwargs in the urlconf to override the default block templates
         for block in conf.base_blocks:
             if tpl := self.kwargs.get(block):
@@ -95,7 +93,6 @@ class CreativeWorkListView(ListView):
         conf = apps.get_app_config("wqcontent")
         context = super().get_context_data(**kwargs)
         context["object"] = self.object
-        context["opengraph"] = self.object.opengraph
         context["precontent_template"] = site.vars.get_value("list_precontent_template")
         context["content_template"] = (
             self.object.content_template or site.vars.get_value("list_content_template")
@@ -204,7 +201,7 @@ class HomePageView(ArticleListView):
                 site=get_current_site(self.request),
                 admin_name="__DEBUG__",
                 title="Generic Site",
-                published_time=timezone.now(),
+                date_published=timezone.now(),
             )
         return hp
 
@@ -272,22 +269,24 @@ class SiteFeed(Feed):
         return Article.objects.live().filter(site=obj)[:paginate_by]
 
     def item_title(self, item):
-        return item.opengraph.title
+        return item.schema_dict.get("title")
 
     def item_description(self, item):
-        return item.opengraph.description
+        return item.schema_dict.get("description")
 
     def item_link(self, item):
         return item.get_absolute_url()
 
     def item_author_name(self, item):
-        return item.author_display_name
+        if item.author:
+            return item.author.name
+        return item.copyright_holder
 
     def item_pubdate(self, item):
-        return item.published_time
+        return item.date_published
 
     def item_updateddate(self, item):
-        return item.modified_time
+        return item.date_modified
 
     def item_copyright(self, item):
         return item.copyright_notice
@@ -312,19 +311,21 @@ class SectionFeed(SiteFeed):
         )
 
     def title(self, obj):
-        return obj.opengraph.title
+        return obj.schema_dict.get("title")
 
     def link(self, obj):
         return obj.get_absolute_url()
 
     def description(self, obj):
-        return obj.opengraph.description
+        return obj.schema_dict.get("description")
 
     def feed_url(self, obj):
         return reverse("section_feed", kwargs={"section_slug": obj.slug})
 
     def author_name(self, obj):
-        return obj.author_display_name or obj.site.vars.get_value("author_display_name")
+        if obj.author:
+            return obj.author.name
+        return obj.copyright_holder
 
     def feed_copyright(self, obj):
         return obj.copyright_notice

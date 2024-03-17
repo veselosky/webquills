@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-{% load i18n static genericsite %}
+{% load i18n static webquills %}
 <html lang="en"
       prefix=" og: https://ogp.me/ns# article: https://ogp.me/ns/article# book: https://ogp.me/ns/book# profile: https://ogp.me/ns/profile# video: https://ogp.me/ns/video# ">
   <head>
@@ -17,7 +17,7 @@
           title="{{ request.site.name }} RSS (All articles)"
           href="{% url "site_feed" %}" />
     {% block opengraph %}
-      {{ opengraph }}
+      {% opengraph %}
     {% endblock opengraph %}
     {% block extra_head %}
       <link rel="stylesheet" href="{% static 'generic.css' %}" />
@@ -29,23 +29,31 @@
   <body class="{% block body_class %}{% endblock body_class %}">
     {% block header %}
       <header class="page_header">
-        {% include header_template|default:"genericsite/blocks/header_simple.html" %}
+        {% include header_template|default:"posh/blocks/header_simple.html" %}
       </header>
     {% endblock header %}
-    {% block precontent %}
-      <div class="precontent">{% include precontent_template|default:"genericsite/blocks/empty.html" %}</div>
-    {% endblock precontent %}
-    {% block content %}
-      <main role="main" class="">
-        {% include content_template|default:"genericsite/blocks/article_text.html" %}
+    {% block main %}
+      <main role="main">
+        {% block precontent %}
+          <section class="precontent">
+            {% include precontent_template|default:"posh/blocks/empty.html" %}
+          </section>
+        {% endblock precontent %}
+        {% block content %}
+          <section class="content">
+            {% include content_template|default:"posh/blocks/article_text.html" %}
+          </section>
+        {% endblock content %}
+        {% block postcontent %}
+          <section class="postcontent">
+            {% include postcontent_template|default:"posh/blocks/empty.html" %}
+          </section>
+        {% endblock postcontent %}
       </main>
-    {% endblock content %}
-    {% block postcontent %}
-      <div class="postcontent">{% include postcontent_template|default:"genericsite/blocks/empty.html" %}</div>
-    {% endblock postcontent %}
+    {% endblock main %}
     {% block footer %}
       <footer class="page_footer">
-        {% include footer_template|default:"genericsite/blocks/footer_simple.html" %}
+        {% include footer_template|default:"posh/blocks/footer_simple.html" %}
       </footer>
     {% endblock footer %}
     {% block extra_js %}

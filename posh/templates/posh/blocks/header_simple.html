@@ -1,0 +1,6 @@
+<nav class="site-nav">
+    <a href="/">
+        {% if logo %}<img src="{{ logo }}" alt="{{ request.site.name }}" />{% endif %}
+        <span>{% firstof brand request.site.name %}</span>
+    </a>
+</nav>

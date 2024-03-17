@@ -1,0 +1,16 @@
+{% with object as article %}
+  <article class="article-full">
+    <h1 class="article-title">{% firstof article.headline article.title %}</h1>
+    {% if article.author.name and article.author.profile_url %}
+      <p class="article-meta">
+        {{ article.date_published|date:"DATE_FORMAT" }}
+        <a href="{{ article.author_profile_url }}">{{ article.author.name }}</a>
+      </p>
+    {% elif article.author.name %}
+      <p class="article-meta">{{ article.date_published|date:"DATE_FORMAT" }} {{ article.author.name }}</p>
+    {% else %}
+      <p class="article-meta">{{ article.date_published|date:"DATE_FORMAT" }}</p>
+    {% endif %}
+    {{ article.body|safe }}
+  </article>
+{% endwith %}

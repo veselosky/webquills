@@ -20,6 +20,7 @@ class WqcontentConfig(AppConfig):
         "footer_template",
     )
     bootstrap_container_class = "container"
+    pagebreak_separator = "<!-- pagebreak -->"
     paginate_by = 15
     paginate_orphans = 2
 
@@ -59,10 +60,10 @@ class WqcontentConfig(AppConfig):
 
 # A context processor to add our vars to template contexts:
 def context_defaults(request):
-    """Supply default context variables for GenericSite templates"""
+    """Supply default context variables for templates"""
     # User could have installed a custom appconfig rather than using the default one
     # above, so always fetch it from Django.
-    conf = apps.get_app_config("genericsite")
+    conf = apps.get_app_config("wqcontent")
     # Grab all the default configurations as a dictionary.
     gvars = conf.as_dict()
 

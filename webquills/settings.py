@@ -91,6 +91,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 # templates from 3rd parties, list our apps first, stock stuff last.
 INSTALLED_APPS = [
     # Our apps
+    "posh",
     "wqlinklist",
     "wqcontent",
     # "webquills.theme_bs4_2021",
@@ -98,6 +99,8 @@ INSTALLED_APPS = [
     # "webquills.linkmgr",
     # "webquills.core",
     # third party apps
+    "allauth",
+    "allauth.account",
     "django_celery_beat",
     "taggit",
     # core Django apps
@@ -120,16 +123,17 @@ MIDDLEWARE = [
     # "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
-    "webquills.sites.middleware.SitesMiddleware",  # set request.site
+    "django.contrib.sites.middleware.CurrentSiteMiddleware",  # set request.site
     # Set this in Apache, not Django.
     # https://docs.djangoproject.com/en/3.2/ref/clickjacking/
     # "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -139,10 +143,17 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.media",
                 "django.template.context_processors.static",
-                "webquills.theme_bs4_2021.context_processors.theme",
+                "wqcontent.apps.context_defaults",
             ]
         },
     }
+]
+
+AUTHENTICATION_BACKENDS = [
+    # Needed to login by username in Django admin, regardless of `allauth`
+    "django.contrib.auth.backends.ModelBackend",
+    # `allauth` specific authentication methods, such as login by email
+    "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
 #######################################################################

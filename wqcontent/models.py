@@ -294,9 +294,16 @@ class CreativeWork(models.Model):
     @property
     def copyright_notice(self):
         if self.custom_copyright_notice:
-            return self.custom_copyright_notice
-        tpl = _("© Copyright %(year)s %(owner)s ")
-        notice = tpl % {"year": self.copyright_year, "owner": self.copyright_holder}
+            return self.custom_copyright_notice.format(self.copyright_year)
+        elif self.author and self.author.copyright_notice:
+            return self.author.copyright_notice.format(self.copyright_year)
+        elif self.site.vars.get_value("copyright_notice"):
+            return self.site.vars.get_value("copyright_notice").format(
+                self.copyright_year
+            )
+        config = apps.get_app_config("wqcontent")
+        tpl = config.fallback_copyright
+        notice = tpl.format(self.copyright_year, self.copyright_holder)
         return notice
 
     @property
@@ -326,6 +333,13 @@ class CreativeWork(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.site.name})"
+
+    def save(self, *args, **kwargs):
+        # We don't use auto_now_add because that would override a manually provided value,
+        # but we still want to set a default.
+        if not self.date_created:
+            self.date_created = timezone.now()
+        return super().save(*args, **kwargs)
 
 
 ######################################################################################
@@ -544,7 +558,7 @@ class CreativeWorkQuerySet(models.QuerySet):
         return self.filter(
             models.Q(expires__isnull=True) | models.Q(expires__gt=timezone.now()),
             status=Status.USABLE,
-            published_time__lte=timezone.now(),
+            date_published__lte=timezone.now(),
         )
 
 
@@ -640,6 +654,7 @@ class Article(BasePage):
                 name="article_unique_slug_per_section",
             )
         ]
+        ordering = ["-date_published"]
         verbose_name = _("article")
         verbose_name_plural = _("articles")
 
@@ -660,7 +675,8 @@ class Article(BasePage):
         og = super().opengraph
         og.append(("article:published_time", self.date_published.isoformat()))
         og.append(("article:modified_time", self.date_modified.isoformat()))
-        og.append(("article:expire_time", self.expires.isoformat()))
+        if self.expires:
+            og.append(("article:expiration_time", self.expires.isoformat()))
         og.append(("article:section", self.section.title))
         # FIXME Author should be the URL of a profile page, not just the name
         if self.author:
@@ -672,3 +688,23 @@ class Article(BasePage):
             "article_page",
             kwargs={"article_slug": self.slug, "section_slug": self.section.slug},
         )
+
+
+######################################################################################
+class SectionMenu:
+    def __init__(self, site: Site, title: str = "", sections=None, pages=None) -> None:
+        self.site = site
+        self.title = title
+        self.sections = sections or Section.objects.live().filter(site=site).order_by(
+            "title"
+        )
+        self.pages = pages
+
+    @property
+    def links(self):
+        home = HomePage.objects.live().filter(site=self.site).latest()
+        menu = [home]
+        menu.extend(self.sections)
+        if self.pages:
+            menu.extend(self.pages)
+        return menu

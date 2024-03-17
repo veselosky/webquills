@@ -10,6 +10,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("accounts/", include("django.contrib.auth.urls")),
+    path("account/", include("allauth.urls")),
     path("<slug:section_slug>/feed/", Redirect.as_view(pattern_name="section_feed")),
     path("feed/", Redirect.as_view(pattern_name="site_feed")),
     # URLs below can be statically generated.
