@@ -65,8 +65,23 @@ if not MEDIA_ROOT.exists():
     MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
 # ManifestStaticFilesStorage is recommended in production, to prevent outdated
 # Javascript / CSS assets being served from cache.
-# See https://docs.djangoproject.com/en/3.1/ref/contrib/staticfiles/#manifeststaticfilesstorage
-STATICFILES_STORAGE = "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"
+# See https://docs.djangoproject.com/en/4.2/ref/contrib/staticfiles/#manifeststaticfilesstorage
+# But for production, you almost certainly should be using a shared storage backend, like:
+# https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html
+STORAGES = {
+    "default": {
+        "BACKEND": env(
+            "DEFAULT_STORAGE", default="django.core.files.storage.FileSystemStorage"
+        ),
+    },
+    "staticfiles": {
+        "BACKEND": env(
+            "STATICFILES_STORAGE",
+            default="django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+        ),
+    },
+}
+
 
 # CELERY settings
 # If the environment has not provided settings, assume there is no broker
@@ -188,8 +203,6 @@ TINYMCE_DEFAULT_CONFIG = {
 #######################################################################
 if DEBUG:
     ALLOWED_HOSTS = ["*"]
-    # Use the basic storage with no manifest
-    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
     try:
         import debug_toolbar
 

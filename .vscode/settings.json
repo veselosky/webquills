@@ -1,8 +1,21 @@
 {
-    "prettier.proseWrap": "always",
-    "prettier.printWidth": 88,
-    "editor.formatOnSave": true,
-    "[html][django-html][handlebars][hbs][mustache][jinja][jinja-html][nj][njk][nunjucks][twig]": {
-        "editor.defaultFormatter": "monosans.djlint"
-      }
+  "debug.toolBarLocation": "docked",
+  "editor.formatOnSave": true,
+  "emmet.includeLanguages": {
+      "django-html": "html"
+  },
+  "git.autofetch": true,
+  "prettier.printWidth": 88,
+  "prettier.proseWrap": "always",
+  "window.zoomLevel": 1,
+  "[html][django-html][handlebars][hbs][mustache][jinja][jinja-html][nj][njk][nunjucks][twig]": {
+      "editor.defaultFormatter": "monosans.djlint"
+    },
+    []
+  "[json]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[django-html][css]": {
+      "editor.tabSize": 2
+  }
 }
