@@ -127,6 +127,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.sites",
     "django.contrib.staticfiles",
+    # Override the default sites admin
+    "sitesadmin",
 ]
 
 MIDDLEWARE = [
