@@ -1,5 +1,4 @@
 from unittest.mock import Mock
-import time
 
 from django.test import TestCase
 

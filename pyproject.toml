@@ -1,0 +1,39 @@
+[project]
+name = "webquills"
+dynamic = ["version"]
+authors = [{ name = "Vince Veselosky", email = "vince@control-escape.com" }]
+requires-python = ">=3.13"
+dependencies = [
+    "celery>=5.4.0",
+    "django>=5.1.7",
+    "django-celery-beat>=2.7.0",
+    "django-commoncontent>=0.3.1",
+    "django-environ>=0.12.0",
+    "django-sitevars>=1.0.2",
+    "django-tinymce>=4.1.0",
+    "docutils>=0.21.2",
+    "granian>=2.0.1",
+    "hiredis>=3.1.0",
+    "pillow>=11.1.0",
+    "redis>=5.2.1",
+]
+
+[build-system]
+requires = ["setuptools>=64", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["webquills"]
+namespaces = false
+
+[tool.setuptools_scm]
+version_file = "webquills/_version.py"
+
+[dependency-groups]
+dev = [
+    "django-debug-toolbar>=5.0.1",
+    "django-extensions>=3.2.3",
+    "pre-commit>=4.1.0",
+    "rich>=13.9.4",
+]

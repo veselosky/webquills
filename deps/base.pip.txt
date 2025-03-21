@@ -1,7 +1,0 @@
-celery
-django-celery-beat
-django-environ
-django-redis
-django-taggit
-django-tinymce
-pillow
