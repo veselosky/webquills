@@ -2,7 +2,7 @@
 name = "webquills"
 dynamic = ["version"]
 authors = [{ name = "Vince Veselosky", email = "vince@control-escape.com" }]
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "celery>=5.4.0",
     "django>=5.1.7",
