@@ -1,135 +1,222 @@
-from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
-from django.db import models
-from django.db.models import Case, IntegerField, Q, When
+from __future__ import annotations
+
+import idna
+from django.contrib.auth import get_user_model
+from django.db import models, transaction
+from django.db.models import Case, IntegerField, Value, When
 from django.http.request import split_domain_port
-from django.utils.translation import gettext_lazy as _
+from django.utils.functional import cached_property
 
-from webquills.core.models import Author
-
-
-SITE_CACHE = {}
-MATCH_HOSTNAME = 0
-MATCH_DOMAIN = 1
-MATCH_DEFAULT = 2
+User = get_user_model()
 
 
-class SiteManager(models.Manager):
-    def get_queryset(self):
-        return super().get_queryset().select_related("author")
-
-    def _get_for_request(self, request):
-        host = split_domain_port(request.get_host())[0]
-        if host in SITE_CACHE:
-            return SITE_CACHE[host]
-
-        # Special case: if subdomain not found, select site with same root domain.
-        # Handy for local dev with "localhost.domain.tld" but in prod you should
-        # redirect to the main domain.
-        parts = host.split(".")
-        domain = ".".join(parts[-2:])
-        if domain in SITE_CACHE:
-            return SITE_CACHE[domain]
-
-        sites = list(
-            Site.objects.annotate(
-                match=Case(
-                    # annotate the results by best choice descending
-                    # put exact hostname match first
-                    When(domain=host, then=MATCH_HOSTNAME),
-                    # then put root domain match
-                    When(domain=domain, then=MATCH_DOMAIN),
-                    # then match default with different hostname. there is only ever
-                    # one default, so order it above (possibly multiple) hostname
-                    # matches so we can use sites[0] below to access it
-                    When(id=settings.SITE_ID, then=MATCH_DEFAULT),
-                    # because of the filter below, if it's not default then its a hostname match
-                    default=MATCH_DEFAULT,
-                    output_field=IntegerField(),
-                )
-            )
-            .filter(Q(domain__in=[host, domain]) | Q(id=settings.SITE_ID))
-            .order_by("match")
-        )
-        if not sites:
-            raise self.model.DoesNotExist()
-
-        for site in sites:
-            # Might have returned as many as 3, may as well cache them all
-            SITE_CACHE[site.domain] = site
-        return sites[0]
-
-    def get_current(self, request=None):
-        "Implemented for compatibility with Django sites."
-        if request:
-            return self._get_for_request(request)
-        elif getattr(settings, "SITE_ID", ""):
-            return self.get(id=settings.SITE_ID)
-
-        raise ImproperlyConfigured(
-            "You're using the Webquills sites framework without having "
-            "set the SITE_ID setting. Create a site in your database and "
-            "set the SITE_ID setting or pass a request to "
-            "Site.objects.get_current() to fix this error."
-        )
-
-    def clear_cache(self):
-        """Clear the ``Site`` object cache."""
-        global SITE_CACHE
-        SITE_CACHE = {}
-
-    def get_by_natural_key(self, domain):
-        return self.get(domain=domain)
+def normalize_domain(domain: str) -> str:
+    """Normalize a domain name according to RFC 3986 and RFC 3987."""
+    domain = domain.strip().lower().rstrip(".")  # Remove trailing dots and lowercase
+    domain = idna.encode(domain).decode("ascii")  # Convert to Punycode if needed
+    return domain
 
 
-class Site(models.Model):
-    class Meta:
-        ordering = ["domain"]
-        verbose_name = _("site")
-        verbose_name_plural = _("sites")
+def get_domain_variants(domain: str) -> list[str]:
+    """Return a list of domain variants to check for in the database.
 
-    domain = models.CharField(
-        _("domain name"),
-        max_length=100,
-        unique=True,
-    )
+    Variants include the normalized domain with and without the port number.
+    """
+    domain, port = split_domain_port(domain)
+    host = normalize_domain(domain)
+    domain_variants = [host]
+    if port:
+        domain_variants.append(f"{host}:{port}")
+    return domain_variants
 
-    name = models.CharField(_("display name"), max_length=50)
 
-    tagline = models.CharField(
-        _("tagline"),
-        max_length=255,
-        blank=True,
-        null=True,
-        help_text=_("Subtitle. A few words letting visitors know what to expect."),
-    )
-
-    author = models.ForeignKey(
-        Author,
-        verbose_name=_("author"),
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        help_text=_("Default author for any page without an explicit author"),
-    )
-
-    objects = SiteManager()
+#######################################################################################
+# Block Reason Model
+#######################################################################################
+class BlockReason(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True)
 
     def __str__(self) -> str:
         return self.name
 
     def save(self, *args, **kwargs):
-        # Saving a site could have changed a domain, or added a new domain that
-        # was previously mapped to the default site. Nuke the cache to prevent
-        # old mappings overriding new ones.
-        global SITE_CACHE
-        super().save(*args, **kwargs)
-        SITE_CACHE = {}
+        self.name = self.name.upper()
+        return super().save(*args, **kwargs)
 
-    def delete(self, *args, **kwargs):
-        # Hopefully we don't go around deleting sites too often, but still...
-        SITE_CACHE.pop(self.domain, None)
-        return super().delete(*args, **kwargs)
 
-    def natural_key(self):
-        return (self.domain,)
+#######################################################################################
+# Site Model and support classes
+#######################################################################################
+class SiteQuerySet(models.QuerySet):
+    def ids_for_user(self, user) -> list[int]:
+        """Return a list of site IDs that the given user has access to.
+
+        Use this when you need to filter a queryset of sites based on user permissions,
+        but do not otherwise need to instantiate the Site objects.
+        """
+        # A user may have access to sites they do not own. Access permission is
+        # determined by group membership.
+        return (
+            self.filter(group__in=user.groups.all())
+            .values_list("id", flat=True)
+            .distinct()
+        )
+
+
+class SiteManager(models.Manager):
+    def get_queryset(self):
+        return (
+            super().get_queryset().select_related("owner").prefetch_related("domains")
+        )
+
+    def get_for_request(self, request) -> Site:
+        """
+        Retrieve the Site object for the given request.
+
+        - Uses `request.get_host()` to get the domain and port.
+        - Checks for both `domain:port` and domain-only matches in a single query.
+        - Explicitly prioritizes an exact match on `domain:port` using database ordering.
+        - Performs a case-insensitive lookup.
+        """
+        # Construct possible domain matches
+        domain_variants = get_domain_variants(request.get_host())
+        # Annotate results to prioritize exact domain:port matches
+        sites = (
+            self.get_queryset()
+            .filter(domains__normalized_domain__exact__in=domain_variants)
+            .annotate(
+                priority=Case(
+                    When(domains__domain__exact=domain_variants[0], then=Value(0)),
+                    When(domains__domain__exact=domain_variants[1], then=Value(1)),
+                    default=Value(2),
+                    output_field=IntegerField(),
+                )
+            )
+            .order_by("priority")
+            .distinct()
+        )
+
+        return sites.first()
+
+
+class Site(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.PROTECT, related_name="sites")
+    group = models.OneToOneField(
+        "auth.Group", on_delete=models.PROTECT, related_name="site"
+    )
+    name = models.CharField(max_length=255)
+    create_date = models.DateTimeField(auto_now_add=True)
+    modified_date = models.DateTimeField(auto_now=True)
+    archive_date = models.DateTimeField(null=True, blank=True)
+    archived_canonical_name = models.CharField(max_length=255, blank=True)
+    block_reason = models.ForeignKey(
+        BlockReason, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    # domains = related_name from Domain FK
+
+    objects = SiteManager.from_queryset(SiteQuerySet)()
+
+    @cached_property
+    def canonical_domain(self) -> Domain:
+        return self.domains.filter(is_canonical=True).first()
+
+    @cached_property
+    def primary_domain(self) -> Domain:
+        return self.domains.filter(is_primary=True).first()
+
+    @property
+    def domain(self) -> str:
+        """For compatibility with Django's RequestSite (returns primary domain string)"""
+        if self.primary_domain:
+            return self.primary_domain.display_domain
+        return ""
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.domain or 'No Primary Domain'})"
+
+
+#######################################################################################
+# Domain Model and support classes
+#######################################################################################
+class DomainManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().select_related("site")
+
+    def get_for_request(self, request) -> Domain:
+        """
+        Returns the Domain object best matching the given request.
+
+        - Uses `request.get_host()` to get the domain and port.
+        - Performs domain name normalization before lookup.
+        """
+        # Construct possible domain matches
+        domain_variants = get_domain_variants(request.get_host())
+        # Annotate results to prioritize exact domain:port matches
+        domains = (
+            self.get_queryset()
+            .filter(normalized_domain__exact__in=domain_variants)
+            .annotate(
+                priority=Case(
+                    When(domain__exact=domain_variants[0], then=Value(0)),
+                    When(domain__exact=domain_variants[1], then=Value(1)),
+                    default=Value(2),
+                    output_field=IntegerField(),
+                )
+            )
+            .order_by("priority")
+            .distinct()
+        )
+        return domains.first()
+
+
+class Domain(models.Model):
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="domains")
+    display_domain = models.CharField(max_length=255, unique=True)
+    normalized_domain = models.CharField(max_length=255, unique=True)
+
+    is_primary = models.BooleanField(default=False)
+    is_canonical = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["site"],
+                condition=models.Q(is_primary=True),
+                name="unique_primary_domain",
+            ),
+            models.UniqueConstraint(
+                fields=["site"],
+                condition=models.Q(is_canonical=True),
+                name="unique_canonical_domain",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        """
+        Ensure that at most one domain per site is marked as primary and canonical,
+        within a single atomic transaction.
+        """
+        self.normalized_domain = normalize_domain(self.display_domain)
+        with transaction.atomic():
+            if self.is_primary:
+                qs = Domain.objects.filter(site=self.site, is_primary=True)
+                if self.pk:
+                    qs = qs.exclude(pk=self.pk)
+                qs.update(is_primary=False)
+            if self.is_canonical:
+                qs = Domain.objects.filter(site=self.site, is_canonical=True)
+                if self.pk:
+                    qs = qs.exclude(pk=self.pk)
+                qs.update(is_canonical=False)
+
+            super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        status = []
+        if self.is_primary:
+            status.append("Primary")
+        if self.is_canonical:
+            status.append("Canonical")
+        return f"{self.display_domain} ({', '.join(status) if status else 'Alternate'})"

@@ -1,3 +1,0 @@
-{% load cache links %}{% cache 86400 category_links request.site.id module.slug %}
-{% include "links/_category.html" with category=module links=module.links.all %}
-{% endcache %}

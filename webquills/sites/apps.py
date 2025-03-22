@@ -1,5 +1,4 @@
 from django.apps import AppConfig
-from django.db.models.signals import post_migrate
 from django.utils.translation import gettext_lazy as _
 
 
@@ -11,7 +10,4 @@ class SitesConfig(AppConfig):
 
     def ready(self) -> None:
         # Once the ORM is initialized, connect signal handlers
-        from . import signals
-
-        signals.connect_signals()
-        post_migrate.connect(signals.create_default_site, sender=self)
+        pass
