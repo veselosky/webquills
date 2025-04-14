@@ -5,8 +5,8 @@ authors = [{ name = "Vince Veselosky", email = "vince@control-escape.com" }]
 requires-python = ">=3.12"
 dependencies = [
     "celery>=5.4.0",
-    "django>=5.1.7",
-    "django-celery-beat>=2.7.0",
+    "django>=5.2.0",
+    # "django-celery-beat>=2.7.0",
     "django-commoncontent>=0.3.1",
     "django-environ>=0.12.0",
     "django-sitevars>=1.0.2",
@@ -28,7 +28,6 @@ include = ["webquills"]
 namespaces = false
 
 [tool.setuptools_scm]
-version_file = "webquills/_version.py"
 
 [dependency-groups]
 dev = [
