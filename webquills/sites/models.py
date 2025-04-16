@@ -3,7 +3,6 @@ from __future__ import annotations
 import idna
 from django.contrib.auth import get_user_model
 from django.db import models, transaction
-from django.db.models import Case, IntegerField, Value, When
 from django.http.request import split_domain_port
 from django.utils.functional import cached_property
 
@@ -15,19 +14,6 @@ def normalize_domain(domain: str) -> str:
     domain = domain.strip().lower().rstrip(".")  # Remove trailing dots and lowercase
     domain = idna.encode(domain).decode("ascii")  # Convert to Punycode if needed
     return domain
-
-
-def get_domain_variants(domain: str) -> list[str]:
-    """Return a list of domain variants to check for in the database.
-
-    Variants include the normalized domain with and without the port number.
-    """
-    domain, port = split_domain_port(domain)
-    host = normalize_domain(domain)
-    domain_variants = [host]
-    if port:
-        domain_variants.append(f"{host}:{port}")
-    return domain_variants
 
 
 #######################################################################################
@@ -67,37 +53,23 @@ class SiteQuerySet(models.QuerySet):
 class SiteManager(models.Manager):
     def get_queryset(self):
         return (
-            super().get_queryset().select_related("owner").prefetch_related("domains")
+            super()
+            .get_queryset()
+            .select_related("owner", "group")
+            .prefetch_related("domains")
         )
 
-    def get_for_request(self, request) -> Site:
+    def get_for_request(self, request) -> Site | None:
         """
-        Retrieve the Site object for the given request.
+        Returns the Site object best matching the given request.
 
-        - Uses `request.get_host()` to get the domain and port.
-        - Checks for both `domain:port` and domain-only matches in a single query.
-        - Explicitly prioritizes an exact match on `domain:port` using database ordering.
-        - Performs a case-insensitive lookup.
+        Uses `Domain.get_for_request` to find the Domain, then returns the associated
+        Site.
         """
-        # Construct possible domain matches
-        domain_variants = get_domain_variants(request.get_host())
-        # Annotate results to prioritize exact domain:port matches
-        sites = (
-            self.get_queryset()
-            .filter(domains__normalized_domain__exact__in=domain_variants)
-            .annotate(
-                priority=Case(
-                    When(domains__domain__exact=domain_variants[0], then=Value(0)),
-                    When(domains__domain__exact=domain_variants[1], then=Value(1)),
-                    default=Value(2),
-                    output_field=IntegerField(),
-                )
-            )
-            .order_by("priority")
-            .distinct()
-        )
-
-        return sites.first()
+        domain = Domain.objects.get_for_request(request)
+        if domain:
+            return domain.site
+        return None
 
 
 class Site(models.Model):
@@ -144,31 +116,18 @@ class DomainManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().select_related("site")
 
-    def get_for_request(self, request) -> Domain:
+    def get_for_request(self, request) -> Domain | None:
         """
         Returns the Domain object best matching the given request.
 
         - Uses `request.get_host()` to get the domain and port.
         - Performs domain name normalization before lookup.
+
+        If the domain is not found, returns None.
         """
-        # Construct possible domain matches
-        domain_variants = get_domain_variants(request.get_host())
-        # Annotate results to prioritize exact domain:port matches
-        domains = (
-            self.get_queryset()
-            .filter(normalized_domain__exact__in=domain_variants)
-            .annotate(
-                priority=Case(
-                    When(domain__exact=domain_variants[0], then=Value(0)),
-                    When(domain__exact=domain_variants[1], then=Value(1)),
-                    default=Value(2),
-                    output_field=IntegerField(),
-                )
-            )
-            .order_by("priority")
-            .distinct()
-        )
-        return domains.first()
+        host, port = split_domain_port(request.get_host())
+        domain = normalize_domain(host)
+        return self.get_queryset().filter(normalized_domain=domain).first()
 
 
 class Domain(models.Model):
@@ -178,6 +137,8 @@ class Domain(models.Model):
 
     is_primary = models.BooleanField(default=False)
     is_canonical = models.BooleanField(default=False)
+
+    objects = DomainManager()
 
     class Meta:
         constraints = [

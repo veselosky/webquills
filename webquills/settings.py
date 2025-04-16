@@ -134,6 +134,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 INSTALLED_APPS = [
     # Add your custom apps at the top so you can override Django's templates:
+    "webquills.sites",
     # Third party apps:
     "tinymce",
     # Core Django apps below custom so we can override their templates
