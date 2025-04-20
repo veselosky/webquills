@@ -58,7 +58,7 @@ class SiteEditForm(forms.ModelForm):
             subdomain=normalized_subdomain, archive_date=None
         )
         if self.instance.pk:
-            dupe_subdomain.exclude(pk=self.instance.pk)
+            dupe_subdomain = dupe_subdomain.exclude(pk=self.instance.pk)
         if dupe_subdomain.exists():
             raise forms.ValidationError(
                 domain_not_available, code="domain_not_available"
