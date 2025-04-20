@@ -13,7 +13,7 @@ from webquills.sites.validators import domain_not_available
 User = get_user_model()
 
 
-@override_settings(SITES_ROOT_DOMAIN="example.com")
+@override_settings(WEBQUILLS_ROOT_DOMAIN="example.com")
 class SiteCreateViewTests(TestCase):
     @classmethod
     def setUpClass(cls):
