@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+  {% for site in object_list %}
+    <div class="site">
+      <h2>{{ site.name }}</h2>
+      <p>
+        URL: <a href="{{ site.url }}">{{ site.url }}</a>
+      </p>
+      <p>Created at: {{ site.created_at }}</p>
+      <p>Updated at: {{ site.updated_at }}</p>
+      <a href="{% url 'site_edit' site.id %}">Edit</a>
+    </div>
+  {% empty %}
+    <p>No sites available.</p>
+  {% endfor %}
+{% endblock content %}

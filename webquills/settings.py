@@ -21,15 +21,14 @@ import environ
 # project name is the first part of the settings module name. This allows us
 # to keep this file pure Python.
 PROJECT = __name__.split(".")[0]
-
-#######################################################################################
-# SECTION: Settings that can (and maybe should) differ between environments
-#######################################################################################
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'. But these
 # paths should only be used as defaults in development. In production, you
 # should set any paths via environment variables.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+#######################################################################################
+# SECTION: Settings that can (and maybe should) differ between environments
+#######################################################################################
 
 # Get environment settings.
 env = environ.Env()
@@ -134,6 +133,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 INSTALLED_APPS = [
     # Add your custom apps at the top so you can override Django's templates:
+    "webquills",
     "webquills.sites",
     # Third party apps:
     "tinymce",
@@ -354,6 +354,19 @@ DEBUG_LOGGING = {
 }
 if DEBUG:
     LOGGING = DEBUG_LOGGING
+
+#######################################################################################
+# SECTION: WEBQUILLS SETTINGS
+#######################################################################################
+WEBQUILLS_ROOT_DOMAIN = env("WEBQUILLS_ROOT_DOMAIN", default="example.com")
+WEBQUILLS_RESERVED_SUBDOMAINS = env(
+    "WEBQUILLS_RESERVED_SUBDOMAINS",
+    default=[
+        "static",
+        "media",
+        "assets",
+    ],
+)
 
 #######################################################################################
 # SECTION: DEVELOPMENT TOOLS

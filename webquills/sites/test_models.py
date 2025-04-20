@@ -1,8 +1,9 @@
 import unittest
-from webquills.sites.models import normalize_domain
-from django.test import TestCase, RequestFactory
-from django.contrib.auth.models import User, Group
-from webquills.sites.models import Site, Domain
+
+from django.contrib.auth.models import Group, User
+from django.test import RequestFactory, TestCase
+
+from webquills.sites.models import Domain, Site, normalize_domain
 
 # filepath: /Users/vince/Devel/webquills/webquills/sites/test_models.py
 
@@ -65,8 +66,8 @@ class TestSiteManager(TestCase):
 class TestSiteQuerySet(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="testuser")
-        self.group1 = Group.objects.create(name="example.com")
-        self.group2 = Group.objects.create(name="example.org")
+        self.group1 = Group.objects.create(name="site:example.com")
+        self.group2 = Group.objects.create(name="site:example.org")
         self.user.groups.add(self.group1)
         self.user.groups.add(self.group2)
 
@@ -74,11 +75,15 @@ class TestSiteQuerySet(TestCase):
             owner=self.user,
             group=self.group1,
             name="Site 1",
+            subdomain="example.com",
+            normalized_subdomain="example.com",
         )
         self.site2 = Site.objects.create(
             owner=self.user,
             group=self.group2,
             name="Site 2",
+            subdomain="example.org",
+            normalized_subdomain="example.org",
         )
 
     def test_ids_for_user(self):

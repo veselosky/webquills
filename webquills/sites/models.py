@@ -1,19 +1,15 @@
 from __future__ import annotations
 
-import idna
 from django.contrib.auth import get_user_model
 from django.db import models, transaction
 from django.http.request import split_domain_port
+from django.urls import reverse
 from django.utils.functional import cached_property
+from django.utils.translation import gettext_lazy as _
+
+from webquills.sites.validators import normalize_domain
 
 User = get_user_model()
-
-
-def normalize_domain(domain: str) -> str:
-    """Normalize a domain name according to RFC 3986 and RFC 3987."""
-    domain = domain.strip().lower().rstrip(".")  # Remove trailing dots and lowercase
-    domain = idna.encode(domain).decode("ascii")  # Convert to Punycode if needed
-    return domain
 
 
 #######################################################################################
@@ -49,6 +45,16 @@ class SiteQuerySet(models.QuerySet):
             .distinct()
         )
 
+    def for_user(self, user) -> SiteQuerySet:
+        """Return a queryset of sites that the given user has access to.
+
+        Use this when you need to filter a queryset of sites based on user permissions,
+        and you do need to instantiate the Site objects.
+        """
+        # A user may have access to sites they do not own. Access permission is
+        # determined by group membership.
+        return self.filter(group__in=user.groups.all())
+
 
 class SiteManager(models.Manager):
     def get_queryset(self):
@@ -78,6 +84,23 @@ class Site(models.Model):
         "auth.Group", on_delete=models.PROTECT, related_name="site"
     )
     name = models.CharField(max_length=255)
+    # Django Group names have a max_length of 150. Since we create a Group for each
+    # Site using the normalized subdomain with a prefix of "site:", we can only allow
+    # 145 characters for the subdomain.
+    subdomain = models.CharField(
+        _("subdomain"),
+        max_length=145,
+        unique=True,
+        help_text=_("Subdomain for the site"),
+    )
+    # Normalized domains may have more characters than the display domain, but still
+    # must fit in 145 characters.
+    normalized_subdomain = models.SlugField(
+        _("normalized subdomain"),
+        max_length=145,
+        unique=True,
+        help_text=_("Normalized subdomain for the site"),
+    )
     create_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)
     archive_date = models.DateTimeField(null=True, blank=True)
@@ -89,6 +112,12 @@ class Site(models.Model):
     # domains = related_name from Domain FK
 
     objects = SiteManager.from_queryset(SiteQuerySet)()
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.domain or 'No Primary Domain'})"
+
+    def get_absolute_url(self):
+        return reverse("site_update", kwargs={"pk": self.pk})
 
     @cached_property
     def canonical_domain(self) -> Domain:
@@ -105,8 +134,12 @@ class Site(models.Model):
             return self.primary_domain.display_domain
         return ""
 
-    def __str__(self) -> str:
-        return f"{self.name} ({self.domain or 'No Primary Domain'})"
+    @classmethod
+    def get_for_request(cls, request) -> Site | None:
+        """
+        Shortcut method for Site.objects.get_for_request(request).
+        """
+        return cls.objects.get_for_request(request)
 
 
 #######################################################################################
@@ -154,6 +187,14 @@ class Domain(models.Model):
             ),
         ]
 
+    def __str__(self) -> str:
+        status = []
+        if self.is_primary:
+            status.append("Primary")
+        if self.is_canonical:
+            status.append("Canonical")
+        return f"{self.display_domain} ({', '.join(status) if status else 'Alternate'})"
+
     def save(self, *args, **kwargs):
         """
         Ensure that at most one domain per site is marked as primary and canonical,
@@ -173,11 +214,3 @@ class Domain(models.Model):
                 qs.update(is_canonical=False)
 
             super().save(*args, **kwargs)
-
-    def __str__(self) -> str:
-        status = []
-        if self.is_primary:
-            status.append("Primary")
-        if self.is_canonical:
-            status.append("Canonical")
-        return f"{self.display_domain} ({', '.join(status) if status else 'Alternate'})"
