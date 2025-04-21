@@ -65,20 +65,6 @@ class SiteUpdateViewTests(TestCase):
         cls.user.save()
 
     def setUp(self):
-        self.group = Group.objects.create(name="site:test")
-        # As the owner, the user would be automatically added to the group
-        # when the site is created.
-        self.user.groups.add(self.group)
-        self.user.save()
-        self.user.refresh_from_db()
-
-        self.site = Site.objects.create(
-            owner=self.user,
-            group=self.group,
-            name="Test Site",
-            subdomain="test",
-            normalized_subdomain="test",
-        )
         self.client.force_login(self.user)
         self.valid_data = {
             "name": "Updated Site",
@@ -86,21 +72,30 @@ class SiteUpdateViewTests(TestCase):
         }
 
     def test_form_valid_updates_site_and_group(self):
+        site = actions.create_site(self.user, name="Test Site", subdomain="test")
         response = self.client.post(
-            reverse("site_update", args=[self.site.pk]), data=self.valid_data
+            reverse("site_update", args=[site.pk]), data=self.valid_data
         )
         self.assertEqual(response.status_code, 302)  # Redirect on success
-        self.site.refresh_from_db()
-        self.group.refresh_from_db()
-        self.assertEqual(self.site.name, "Updated Site")
-        self.assertEqual(self.site.subdomain, "updated")
-        self.assertEqual(self.group.name, "site:updated")
+        # Get a fresh copy from DB
+        site.refresh_from_db()
+        self.assertEqual(site.name, "Updated Site")
+        self.assertEqual(site.subdomain, "updated")
+        self.assertEqual(site.normalized_subdomain, "updated")
+        self.assertEqual(site.group.name, "site:updated")
+        self.assertEqual(Domain.objects.filter(site=site).count(), 1)
+        self.assertEqual(
+            Domain.objects.get(site=site).display_domain, "updated.example.com"
+        )
+        self.assertEqual(site.canonical_domain.display_domain, "updated.example.com")
+        self.assertEqual(site.canonical_domain.normalized_domain, "updated.example.com")
 
     def test_form_valid_handles_database_error(self):
+        site = actions.create_site(self.user, name="Test Site", subdomain="test")
         with patch("webquills.sites.views.update_site", side_effect=DatabaseError):
             resp = self.client.post(
-                reverse("site_update", args=[self.site.pk]), data=self.valid_data
+                reverse("site_update", args=[site.pk]), data=self.valid_data
             )
         self.assertContains(resp, domain_not_available)
-        self.site.refresh_from_db()
-        self.assertEqual(self.site.name, "Test Site")  # No changes applied
+        site.refresh_from_db()
+        self.assertEqual(site.name, "Test Site")  # No changes applied

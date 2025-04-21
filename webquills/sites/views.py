@@ -54,8 +54,10 @@ class SiteEditForm(forms.ModelForm):
 
         normalized_subdomain = normalize_domain(subdomain)
 
+        # We're allowed to duplicate archived sites because they won't create a
+        # conflict; they are not served.
         dupe_subdomain = Site.objects.filter(
-            subdomain=normalized_subdomain, archive_date=None
+            normalized_subdomain=normalized_subdomain, archive_date=None
         )
         if self.instance.pk:
             dupe_subdomain = dupe_subdomain.exclude(pk=self.instance.pk)
@@ -105,7 +107,8 @@ class SiteCreateView(PermissionRequiredMixin, CreateView):
                 _("This domain name is not available."),
             )
             return self.form_invalid(form)
-
+        # We intentionally don't call super().form_valid() here, because it would call
+        # form.save(), and our form is intentionally incomplete.
         return HttpResponseRedirect(self.get_success_url())
 
 
@@ -129,7 +132,7 @@ class SiteUpdateView(PermissionRequiredMixin, UpdateView):
         """Handle the form submission and update the Site instance."""
         try:
             update_site(
-                site=self.object,
+                site=self.get_object(),
                 name=form.cleaned_data["name"],
                 subdomain=form.cleaned_data["subdomain"],
             )
@@ -142,4 +145,6 @@ class SiteUpdateView(PermissionRequiredMixin, UpdateView):
                 _("This domain name is not available."),
             )
             return self.form_invalid(form)
-        return super().form_valid(form)
+        # We intentionally don't call super().form_valid() here, because it would call
+        # form.save(), and our form is intentionally incomplete.
+        return HttpResponseRedirect(self.get_success_url())
