@@ -117,10 +117,11 @@ def update_site(
         if site.subdomain != subdomain:
             site.subdomain = subdomain
             site.normalized_subdomain = normalized_subdomain
-            site.save()
             # Update the Domain instance
             domain_instance = Domain.objects.get(site=site, is_canonical=True)
             domain_instance.display_domain = domain
             domain_instance.normalized_domain = normalized_domain
             domain_instance.save()
+        site.save()
+
     return site
