@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
-from webquills.sites.validators import normalize_domain
+from webquills.sites.validators import normalize_domain, validate_subdomain
 
 User = get_user_model()
 
@@ -39,7 +39,7 @@ class SiteQuerySet(models.QuerySet):
         """
         # A user may have access to sites they do not own. Access permission is
         # determined by group membership.
-        return (
+        return list(
             self.filter(group__in=user.groups.all())
             .values_list("id", flat=True)
             .distinct()
@@ -84,20 +84,19 @@ class Site(models.Model):
         "auth.Group", on_delete=models.PROTECT, related_name="site"
     )
     name = models.CharField(max_length=255)
-    # Django Group names have a max_length of 150. Since we create a Group for each
-    # Site using the normalized subdomain with a prefix of "site:", we can only allow
-    # 145 characters for the subdomain.
+    # Length is constrained by RFC1035 to 63 characters
     subdomain = models.CharField(
         _("subdomain"),
-        max_length=145,
+        max_length=64,
         unique=True,
         help_text=_("Subdomain for the site"),
+        validators=[validate_subdomain],
     )
     # Normalized domains may have more characters than the display domain, but still
-    # must fit in 145 characters.
+    # must fit in 64 characters.
     normalized_subdomain = models.SlugField(
         _("normalized subdomain"),
-        max_length=145,
+        max_length=64,
         unique=True,
         help_text=_("Normalized subdomain for the site"),
     )
@@ -160,7 +159,16 @@ class DomainManager(models.Manager):
         """
         host, port = split_domain_port(request.get_host())
         domain = normalize_domain(host)
-        return self.get_queryset().filter(normalized_domain=domain).first()
+        # We don't want to return a Domain for sites that are archived or blocked.
+        return (
+            self.get_queryset()
+            .filter(
+                normalized_domain=domain,
+                site__archive_date=None,
+                site__block_reason=None,
+            )
+            .first()
+        )
 
 
 class Domain(models.Model):
