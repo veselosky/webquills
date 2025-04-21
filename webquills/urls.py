@@ -1,11 +1,12 @@
 from importlib.util import find_spec
-from django.conf import settings
-from django.urls import include, path
-from django.contrib import admin
 
+from django.conf import settings
+from django.contrib import admin
+from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("cms/sites/", include("webquills.sites.urls")),
 ]
 
 if settings.DEBUG:

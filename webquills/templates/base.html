@@ -1,0 +1,44 @@
+<!DOCTYPE html> {% comment %}
+This is a base template for the the WebQuills CMS pages. Pages for generated sites will
+not use this template, they will get their templates from a Theme.
+{% endcomment %}
+{% load i18n static %}
+<html {% if color_mode %}data-bs-theme="{{ color_mode }}"{% endif %}
+      lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>
+      {% block title %}
+        WebQuills
+      {% endblock title %}
+    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {% block css %}
+    {% endblock css %}
+    {% block extra_head %}
+    {% endblock extra_head %}
+  </head>
+  <body>
+    {% block header %}
+      <header class="page_header {{ bootstrap_container_class }}">
+      </header>
+    {% endblock header %}
+    {% block precontent %}
+      <div class="precontent {{ bootstrap_container_class }}"></div>
+    {% endblock precontent %}
+    {% block content %}
+      <main role="main" class="{{ bootstrap_container_class }}">
+        {% include content_template|default:"commoncontent/blocks/article_text.html" %}
+      </main>
+    {% endblock content %}
+    {% block postcontent %}
+      <div class="postcontent {{ bootstrap_container_class }}"></div>
+    {% endblock postcontent %}
+    {% block footer %}
+      <footer class="page_footer {{ bootstrap_container_class }}">
+      </footer>
+    {% endblock footer %}
+    {% block extra_js %}
+    {% endblock extra_js %}
+  </body>
+</html>

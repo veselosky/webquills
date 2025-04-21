@@ -5,8 +5,8 @@ authors = [{ name = "Vince Veselosky", email = "vince@control-escape.com" }]
 requires-python = ">=3.12"
 dependencies = [
     "celery>=5.4.0",
-    "django>=5.1.7",
-    "django-celery-beat>=2.7.0",
+    "django>=5.2.0",
+    # "django-celery-beat>=2.7.0",
     "django-commoncontent>=0.3.1",
     "django-environ>=0.12.0",
     "django-sitevars>=1.0.2",
@@ -28,12 +28,47 @@ include = ["webquills"]
 namespaces = false
 
 [tool.setuptools_scm]
-version_file = "webquills/_version.py"
 
 [dependency-groups]
 dev = [
     "django-debug-toolbar>=5.0.1",
     "django-extensions>=3.2.3",
+    "djlint>=1.36.4",
     "pre-commit>=4.1.0",
     "rich>=13.9.4",
 ]
+
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "DJ"]
+ignore = ["E501", "W505"]
+
+[tool.djlint]
+close_void_tags = true
+format_css = true
+format_js = true
+indent = 2
+max_line_length = 119
+profile = "django"
+# https://www.djlint.com/docs/linter/#rules
+# D018 (Django) Internal links should use the {% url ... %} pattern.
+# H017 Void tags should be self closing.
+# H023 Do not use entity references.
+# H030 Consider adding meta description.
+# H031 Consider adding meta keywords.
+# H035 Meta tags should be self closing.
+# T001 Variables should be wrapped in whitespace. Ex: {{ this }}
+# T002 Double quotes should be used in tags.
+ignore = "D018,H023,H030,H031,T002"
+include = "H017,H035"
+
+[tool.djlint.css]
+indent_size = 2
+
+[tool.djlint.js]
+indent_size = 2
