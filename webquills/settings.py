@@ -15,6 +15,7 @@ See also https://docs.djangoproject.com/en/dev/howto/deployment/checklist/
 from importlib.util import find_spec
 from pathlib import Path
 
+import commoncontent.apps
 import environ
 
 # Rather than use template substitution, we assume the convention that the
@@ -25,7 +26,6 @@ PROJECT = __name__.split(".")[0]
 # paths should only be used as defaults in development. In production, you
 # should set any paths via environment variables.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 #######################################################################################
 # SECTION: Settings that can (and maybe should) differ between environments
 #######################################################################################
@@ -50,7 +50,8 @@ ALLOWED_HOSTS = env("ALLOWED_HOSTS", default=["*"])
 # and possibly SECURE_SSL_REDIRECT = True
 # https://docs.djangoproject.com/en/dev/ref/settings/#secure-proxy-ssl-header
 # https://docs.djangoproject.com/en/dev/ref/settings/#secure-ssl-redirect
-if env("USE_TLS", default=False):
+SECURE_SSL_REDIRECT = False
+if env.bool("USE_TLS", default=False):
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = True
 
@@ -136,16 +137,24 @@ INSTALLED_APPS = [
     "webquills",
     "webquills.sites",
     # Third party apps:
+    *commoncontent.apps.CONTENT,  # commoncontent, django_bootstrap_icons, imagekit, taggit
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.mfa",
+    # TODO: Add social account providers as needed
+    # Optionally use tinymce in the admin
     "tinymce",
     # Core Django apps below custom so we can override their templates
     "django.contrib.admin",
     "django.contrib.admindocs",
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "django.contrib.sessions",
+    "django.contrib.humanize",
     "django.contrib.messages",
     "django.contrib.sitemaps",
     "django.contrib.staticfiles",
+    "sitevars",
 ]
 
 MIDDLEWARE = [
@@ -156,8 +165,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    # TODO: Add SitesMiddleware after it is overhauled (#66)
-    # "webquills.sites.middleware.SitesMiddleware",
+    "webquills.sites.middleware.SitesMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 TEMPLATES = [
@@ -172,6 +181,10 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.media",
                 "django.template.context_processors.static",
+                "django.template.context_processors.i18n",
+                # These are both required for commoncontent templates to work properly:
+                "commoncontent.apps.context_defaults",
+                "sitevars.context_processors.inject_sitevars",
             ],
         },
     },
@@ -190,6 +203,50 @@ TIME_ZONE = "America/New_York"
 USE_I18N = True
 USE_TZ = True
 
+# CELERY settings (only if celery is installed)
+if find_spec("celery"):
+    # If the environment has not provided settings, assume there is no broker
+    # and run celery tasks in-process. This means you MUST provide
+    # CELERY_TASK_ALWAYS_EAGER=False in your environment to actually use celery.
+    CELERY_TASK_ALWAYS_EAGER = env("CELERY_TASK_ALWAYS_EAGER", default=True)
+    CELERY_TASK_EAGER_PROPAGATES = env("CELERY_TASK_EAGER_PROPAGATES", default=True)
+    # For development setup, assume default of local redis.
+    CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/1")
+    CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="")
+    CELERY_TIME_ZONE = TIME_ZONE
+    if find_spec("django_celery_beat"):
+        CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+        INSTALLED_APPS.append("django_celery_beat")
+
+#######################################################################################
+# SECTION: AUTHENTICATION SETTINGS
+#######################################################################################
+# Regarding sessions: Sessions are required for authentication. The cookie backend has
+# the advantage of being stateless, but the disadvantage of not being able to
+# invalidate sessions, which makes you subject to cookie hijacking and replay attacks.
+# Not a good security posture. The database backend is stateful, but writing to the
+# database on GET requests is a recipe for DoS attacks. The cache backend is therefore
+# the best option, but requires a cache backend that is shared across all servers, and
+# ideally persists data (i.e. Redis). We inspect the cache settings, and if a suitable
+# cache is configured we use it. Otherwise, we fall back to the database backend.
+# https://docs.djangoproject.com/en/dev/topics/http/sessions/
+# https://docs.djangoproject.com/en/dev/ref/settings/#session-engine
+if "redis" in CACHES["default"]["BACKEND"]:
+    SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+else:
+    INSTALLED_APPS.append("django.contrib.sessions")  # Only required for db sessions
+    SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = env("SESSION_COOKIE_SECURE", default=SECURE_SSL_REDIRECT)
+SESSION_SAVE_EVERY_REQUEST = False
+
+AUTHENTICATION_BACKENDS = [
+    # Needed to login by username in Django admin, regardless of `allauth`
+    "django.contrib.auth.backends.ModelBackend",
+    # `allauth` specific authentication methods, such as login by email
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
 # Password validation
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
@@ -206,21 +263,85 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+LOGIN_REDIRECT_URL = env(
+    "LOGIN_REDIRECT_URL",
+    default="/accounts/email",
+)
 
-# CELERY settings (only if celery is installed)
-if find_spec("celery"):
-    # If the environment has not provided settings, assume there is no broker
-    # and run celery tasks in-process. This means you MUST provide
-    # CELERY_TASK_ALWAYS_EAGER=False in your environment to actually use celery.
-    CELERY_TASK_ALWAYS_EAGER = env("CELERY_TASK_ALWAYS_EAGER", default=True)
-    CELERY_TASK_EAGER_PROPAGATES = env("CELERY_TASK_EAGER_PROPAGATES", default=True)
-    # For development setup, assume default of local redis.
-    CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://localhost:6379/1")
-    CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="")
-    CELERY_TIME_ZONE = TIME_ZONE
-    if find_spec("django_celery_beat"):
-        CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
-        INSTALLED_APPS.append("django_celery_beat")
+# Allauth settings
+# https://docs.allauth.org/en/latest/account/configuration.html
+
+# These values are hard-coded for various reasons, usually either security or user
+# experience.
+ACCOUNT_ADAPTER = "webquills.auth.AccountAdapter"
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+ACCOUNT_EMAIL_UNKNOWN_ACCOUNTS = False
+ACCOUNT_LOGOUT_ON_GET = False
+ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = False
+# TODO: ACCOUNT_SIGNUP_FORM_CLASS
+# TODO: ACCOUNT_SIGNUP_REDIRECT_URL
+ACCOUNT_UNIQUE_EMAIL = True
+# TODO: ACCOUNT_USER_DISPLAY
+
+# These values can be easily overridden in new installations, but have defaults set
+# according to best practices.
+ACCOUNT_EMAIL_NOTIFICATIONS = env.bool("ACCOUNT_EMAIL_NOTIFICATIONS", default=True)
+ACCOUNT_EMAIL_VERIFICATION = env(
+    "ACCOUNT_EMAIL_VERIFICATION",
+    default="mandatory",
+)
+assert ACCOUNT_EMAIL_VERIFICATION in [
+    "none",
+    "optional",
+    "mandatory",
+], (
+    f"ACCOUNT_EMAIL_VERIFICATION must be one of ['none', 'optional', 'mandatory'], not {ACCOUNT_EMAIL_VERIFICATION}"
+)
+ACCOUNT_EMAIL_SUBJECT_PREFIX = env(
+    "ACCOUNT_EMAIL_SUBJECT_PREFIX",
+    default="WebQuills: ",
+)
+ACCOUNT_LOGIN_BY_CODE_ENABLED = env.bool(
+    "ACCOUNT_LOGIN_BY_CODE_ENABLED",
+    default=True,
+)
+ACCOUNT_LOGIN_BY_CODE_TIMEOUT = env.int(
+    "ACCOUNT_LOGIN_BY_CODE_TIMEOUT",
+    default=60 * 5,
+)
+ACCOUNT_LOGIN_METHODS = env.list(
+    "ACCOUNT_LOGIN_METHODS",
+    default=["email"],
+)
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = env.bool(
+    "ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION",
+    default=True,
+)
+ACCOUNT_LOGIN_ON_PASSWORD_RESET = env.bool(
+    "ACCOUNT_LOGIN_ON_PASSWORD_RESET",
+    default=True,
+)
+ACCOUNT_LOGOUT_REDIRECT_URL = env(
+    "ACCOUNT_LOGOUT_REDIRECT_URL",
+    default="/",
+)
+ACCOUNT_REAUTHENTICATION_REQUIRED = env.bool(
+    "ACCOUNT_REAUTHENTICATION_REQUIRED",
+    default=False,
+)
+ACCOUNT_REAUTHENTICATION_TIMEOUT = env.int(
+    "ACCOUNT_REAUTHENTICATION_TIMEOUT",
+    default=60 * 5,
+)
+ACCOUNT_SIGNUP_FIELDS = env.list(
+    "ACCOUNT_SIGNUP_FIELDS",
+    default=[
+        "email*",
+        "password1*",
+        "password2*",
+    ],
+)
+# TODO: Configure MFA
 
 #######################################################################################
 # SECTION: LOGGING CONFIGURATION
@@ -358,7 +479,20 @@ if DEBUG:
 #######################################################################################
 # SECTION: WEBQUILLS SETTINGS
 #######################################################################################
-WEBQUILLS_ROOT_DOMAIN = env("WEBQUILLS_ROOT_DOMAIN", default="example.com")
+# For now we borrow the TinyMCE settings from commoncontent, but we will
+# eventually want to override them.
+TINYMCE_DEFAULT_CONFIG = commoncontent.apps.TINYMCE_CONFIG
+# Let sitesettings know about out custom Sites app.
+SITE_MODEL = "sites.Site"
+CURRENT_SITE_METHOD = "get_for_request"
+# If true, anyone can sign up. If false, you need to create accounts manually.
+WEBQUILLS_OPEN_REGISTRATION = env(
+    "WEBQUILLS_OPEN_REGISTRATION",
+    default=False,
+    cast=bool,
+)
+# These subdomains are expected to be used for other purposes, and should not
+# be used for sites.
 WEBQUILLS_RESERVED_SUBDOMAINS = env(
     "WEBQUILLS_RESERVED_SUBDOMAINS",
     default=[
@@ -367,6 +501,8 @@ WEBQUILLS_RESERVED_SUBDOMAINS = env(
         "assets",
     ],
 )
+# REQUIRED. The root domain. All sites will be subdomains of this root domain.
+WEBQUILLS_ROOT_DOMAIN = env("WEBQUILLS_ROOT_DOMAIN")
 
 #######################################################################################
 # SECTION: DEVELOPMENT TOOLS
