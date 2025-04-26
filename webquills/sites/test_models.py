@@ -1,6 +1,6 @@
 import unittest
 
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase, override_settings
 
 from webquills.sites import actions
@@ -42,7 +42,7 @@ class TestSiteManager(TestCase):
         self.assertEqual(site, self.site)
 
     def test_get_for_request_archived_site(self):
-        self.site.archive_date = "2023-01-01"
+        self.site.archive_date = "2023-01-01T00:00:00Z"
         self.site.save()
 
         request = RequestFactory().get("/")
@@ -112,7 +112,7 @@ class TestDomainManager(TestCase):
         self.assertEqual(domain, self.site.primary_domain)
 
     def test_get_for_request_archived_site(self):
-        self.site.archive_date = "2023-01-01"
+        self.site.archive_date = "2023-01-01T00:00:00Z"
         self.site.save()
 
         request = RequestFactory().get("/")

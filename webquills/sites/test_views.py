@@ -13,8 +13,11 @@ from webquills.sites.validators import domain_not_available
 User = get_user_model()
 
 
-@override_settings(WEBQUILLS_ROOT_DOMAIN="example.com")
-class SiteCreateViewTests(TestCase):
+class WebQuillsViewTestCase(TestCase):
+    """
+    Base test case for views in the webquills app.
+    """
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -23,7 +26,20 @@ class SiteCreateViewTests(TestCase):
         cls.user = User.objects.create_user(username="testuser", password="password")
         cls.user.groups.add(Group.objects.get(name="regular_user"))
         cls.user.save()
+        # For the middleware to pass through the request, must be able to look up domain
+        cls.site = actions.create_site(
+            cls.user, name="Default Site for CMS Tests", subdomain="cmstest"
+        )
+        Domain.objects.create(
+            site=cls.site,
+            display_domain="testserver",
+            normalized_domain="testserver",
+            is_primary=True,
+        )
 
+
+@override_settings(WEBQUILLS_ROOT_DOMAIN="testserver")
+class SiteCreateViewTests(WebQuillsViewTestCase):
     def setUp(self):
         self.client.force_login(self.user)
         self.valid_data = {
@@ -42,8 +58,8 @@ class SiteCreateViewTests(TestCase):
         self.assertTrue(site.group.user_set.filter(id=self.user.id).exists())
         # Check that the domain was created
         domain = Domain.objects.get(site=site)
-        self.assertEqual(domain.display_domain, "test.example.com")
-        self.assertEqual(domain.normalized_domain, "test.example.com")
+        self.assertEqual(domain.display_domain, "test.testserver")
+        self.assertEqual(domain.normalized_domain, "test.testserver")
 
     def test_form_valid_handles_database_error(self):
         with patch("django.contrib.auth.models.Group.objects.create") as mock_create:
@@ -54,16 +70,8 @@ class SiteCreateViewTests(TestCase):
         self.assertFalse(Site.objects.filter(name="Test Site").exists())
 
 
-class SiteUpdateViewTests(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        actions.create_default_groups_and_perms()
-        # Create a test user and assign them to the regular_user group
-        cls.user = User.objects.create_user(username="testuser", password="password")
-        cls.user.groups.add(Group.objects.get(name="regular_user"))
-        cls.user.save()
-
+@override_settings(WEBQUILLS_ROOT_DOMAIN="testserver")
+class SiteUpdateViewTests(WebQuillsViewTestCase):
     def setUp(self):
         self.client.force_login(self.user)
         self.valid_data = {
@@ -85,10 +93,10 @@ class SiteUpdateViewTests(TestCase):
         self.assertEqual(site.group.name, "site:updated")
         self.assertEqual(Domain.objects.filter(site=site).count(), 1)
         self.assertEqual(
-            Domain.objects.get(site=site).display_domain, "updated.example.com"
+            Domain.objects.get(site=site).display_domain, "updated.testserver"
         )
-        self.assertEqual(site.canonical_domain.display_domain, "updated.example.com")
-        self.assertEqual(site.canonical_domain.normalized_domain, "updated.example.com")
+        self.assertEqual(site.canonical_domain.display_domain, "updated.testserver")
+        self.assertEqual(site.canonical_domain.normalized_domain, "updated.testserver")
 
     def test_form_valid_handles_database_error(self):
         site = actions.create_site(self.user, name="Test Site", subdomain="test")

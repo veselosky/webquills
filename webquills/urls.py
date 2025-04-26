@@ -5,8 +5,13 @@ from django.contrib import admin
 from django.urls import include, path
 
 urlpatterns = [
+    path("accounts/", include("allauth.urls")),
+    path("admin/doc/", include("django.contrib.admindocs.urls")),
     path("admin/", admin.site.urls),
     path("cms/sites/", include("webquills.sites.urls")),
+    path("tinymce/", include("tinymce.urls")),
+    path("i18n/", include("django.conf.urls.i18n")),
+    path("", include("commoncontent.urls")),
 ]
 
 if settings.DEBUG:

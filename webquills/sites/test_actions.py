@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from webquills.sites.actions import (
     create_default_groups_and_perms,
@@ -15,10 +15,11 @@ from webquills.sites.validators import ValidationError
 User = get_user_model()
 
 
+@override_settings(WEBQUILLS_ROOT_DOMAIN="testserver")
 class TestActions(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="testuser", password="password")
-        self.root_domain = "example.com"
+        self.root_domain = "testserver"
         self.site_config = {"root_domain": self.root_domain}
 
     def test_create_default_groups_and_perms(self):
@@ -66,7 +67,7 @@ class TestActions(TestCase):
                 is_canonical=True,
             ).exists()
         )
-        self.assertTrue(Group.objects.filter(name=f"site:newsubdomain").exists())
+        self.assertTrue(Group.objects.filter(name="site:newsubdomain").exists())
 
     def test_update_site_invalid_subdomain(self):
         site = create_site(self.user, "Old Site", "oldsubdomain")

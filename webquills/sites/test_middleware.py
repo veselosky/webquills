@@ -1,7 +1,9 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 from urllib.parse import urlparse
-from django.test import TestCase, RequestFactory
+
 from django.http import HttpResponse, HttpResponseNotFound
+from django.test import RequestFactory, TestCase
+
 from webquills.sites.middleware import SitesMiddleware
 
 
@@ -17,7 +19,12 @@ class TestSitesMiddleware(TestCase):
         mock_get_for_request.return_value = None
 
         request = self.factory.get("/")
-        response = self.middleware(request)
+        with self.assertLogs("webquills.sites.middleware", "WARNING") as log:
+            response = self.middleware(request)
+            self.assertIn(
+                "No domain found for request",
+                log.output[0],
+            )
 
         self.assertIsInstance(response, HttpResponseNotFound)
         mock_get_for_request.assert_called_once_with(request)
