@@ -46,7 +46,7 @@ indent-width = 4
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "B", "DJ"]
+select = ["E", "F", "B", "DJ", "INT", "T20"]
 ignore = ["E501", "W505"]
 
 [tool.djlint]
