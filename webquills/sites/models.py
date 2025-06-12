@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.db import models, transaction
 from django.http.request import split_domain_port
@@ -8,6 +9,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 from webquills.sites.validators import normalize_domain, validate_subdomain
+from webquills.themes import get_theme_choices
 
 User = get_user_model()
 
@@ -18,6 +20,12 @@ User = get_user_model()
 class BlockReason(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True)
+
+    class Meta:
+        # Translators: Means "the reason a site is blocked".
+        verbose_name = _("block reason")
+        verbose_name_plural = _("block reasons")
+        ordering = ["name"]
 
     def __str__(self) -> str:
         return self.name
@@ -107,10 +115,21 @@ class Site(models.Model):
     block_reason = models.ForeignKey(
         BlockReason, on_delete=models.SET_NULL, null=True, blank=True
     )
+    theme_app = models.CharField(
+        max_length=255,
+        choices=get_theme_choices,
+        default="cleanblog",
+        help_text=_("Choose a theme for the site"),
+    )
 
     # domains = related_name from Domain FK
 
     objects = SiteManager.from_queryset(SiteQuerySet)()
+
+    class Meta:
+        verbose_name = _("site")
+        verbose_name_plural = _("sites")
+        ordering = ["subdomain"]
 
     def __str__(self) -> str:
         return f"{self.name} ({self.domain or 'No Primary Domain'})"
@@ -125,6 +144,14 @@ class Site(models.Model):
     @cached_property
     def primary_domain(self) -> Domain:
         return self.domains.filter(is_primary=True).first()
+
+    @cached_property
+    def theme(self) -> str:
+        """
+        Returns the theme instance for the site.
+        """
+        theme_app = apps.get_app_config(self.theme_app)
+        return theme_app.get_theme_for_site(self)
 
     @property
     def domain(self) -> str:
@@ -182,6 +209,9 @@ class Domain(models.Model):
     objects = DomainManager()
 
     class Meta:
+        verbose_name = _("domain")
+        verbose_name_plural = _("domains")
+        ordering = ["site", "normalized_domain"]
         constraints = [
             models.UniqueConstraint(
                 fields=["site"],
@@ -193,6 +223,12 @@ class Domain(models.Model):
                 condition=models.Q(is_canonical=True),
                 name="unique_canonical_domain",
             ),
+        ]
+        indexes = [
+            models.Index(fields=["site"]),
+            models.Index(fields=["normalized_domain"]),
+            models.Index(fields=["is_primary"]),
+            models.Index(fields=["is_canonical"]),
         ]
 
     def __str__(self) -> str:

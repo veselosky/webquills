@@ -136,6 +136,7 @@ INSTALLED_APPS = [
     # Add your custom apps at the top so you can override Django's templates:
     "webquills",
     "webquills.sites",
+    "webquills.themes.cleanblog",
     # Third party apps:
     *commoncontent.apps.CONTENT,  # commoncontent, django_bootstrap_icons, imagekit, taggit
     "allauth",
