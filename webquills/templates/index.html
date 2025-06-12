@@ -1,9 +1,11 @@
 {% extends "allauth/layouts/entrance.html" %}
 {% load allauth %}
-{% block head_title %}Example Project{% endblock %}
+{% block head_title %}
+  Example Project
+{% endblock head_title %}
 {% block content %}
-    {% element h1 %}
-        Example Project
-    {% endelement %}
-    <p>Welcome to the django-allauth example project.</p>
+  {% element h1 %}
+  Example Project
+{% endelement %}
+<p>Welcome to the django-allauth example project.</p>
 {% endblock content %}

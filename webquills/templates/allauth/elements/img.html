@@ -1,5 +1,7 @@
 <div class="text-center">
-    <img class="img-fluid"
-         src="{{ attrs.src }}"
-         {% if attrs.alt %}alt="{{ attrs.alt }}"{% endif %}>
+  <img class="img-fluid"
+       src="{{ attrs.src }}"
+       {% if attrs.width %}width="{{ attrs.width }}"{% endif %}
+       {% if attrs.height %}height="{{ attrs.height }}"{% endif %}
+       {% if attrs.alt %}alt="{{ attrs.alt }}"{% endif %} />
 </div>
